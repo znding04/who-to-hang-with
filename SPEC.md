@@ -1,39 +1,128 @@
-# 找谁玩 (Who To Play With) — WeChat Mini App Spec
+# 找谁玩 (Who To Play With) — Product Concept
 
-## Overview
-A social relationship tracker (找谁玩) that helps you maintain and strengthen your friendships. Log hangouts with friends, quantitatively score your relationships, and get data-driven recommendations on who you should reach out to next. Never let a good friendship fade from neglect.
+## Core Insight
 
-## Tech Stack
-- **Framework**: Vue 3 (Composition API) + Vite
-- **Styling**: Tailwind CSS 3
-- **Routing**: Vue Router 4 (hash mode for mini-app compatibility)
-- **Storage**: LocalStorage via a reactive composable
-- **Language**: JavaScript (no TypeScript for simplicity)
-- **Compatibility**: Works in modern browsers + WeChat webview
+Every friendship lives on a scatter plot:
 
-## Core Concept
+- **X-axis**: How often AND how long you hang out with a friend (quantity metric)
+- **Y-axis**: How good you feel after hanging out with that friend (quality metric)
 
-Every friendship has a **Relationship Score** that decays over time if you don't hang out. The app tracks your interactions, calculates scores, and tells you which friends need attention — so you can be intentional about the people who matter to you.
+**The ideal line: Y = X** — the more you hang out with someone, the better you feel. Balance.
+
+**The gap between a point and the Y=X line tells you something:**
+- Point ABOVE the line → you're getting more joy than your effort suggests. Great friend.
+- Point BELOW the line → you're putting in effort but not feeling it. One-sided relationship.
+- Point FAR from the line in either direction → something worth investigating.
+
+This app collects enough hangout data to plot that scatter plot, and uses it to make smart recommendations.
+
+---
+
+## The Scatter Plot
+
+Each dot = one friend.
+
+```
+Feelings
+ (Y)
+  ↑
+  │    • Alice (meets often, feels great)
+  │  •
+  │    • Bob (rare but amazing)
+  │       •
+  │            • Carol (meets a lot, feels meh — effort not worth it)
+  │         •
+  │      •
+  │           • David (rare, feels bad — distant anyway)
+  │        •
+  └────────────────────────→ Frequency/Duration (X)
+```
+
+### How X is computed (Quantity Score)
+```
+quantity = log(1 + total_hangouts) × decay(days_since_last)
+```
+- More hangouts → higher score
+- Longer ago last hangout → lower score (exponential decay, ~60 days)
+- Score normalized 0–100
+
+### How Y is computed (Quality Score)
+```
+quality = weighted_average(quality_rating × interaction_type_weight)
+```
+- Each logged hangout has a quality rating (1–5 stars)
+- Different interaction types weight differently:
+  - Trip (✈️): weight 2.0 — high impact
+  - Activity (🏃): weight 1.2 — medium-high
+  - Meal (🍜): weight 1.0 — baseline
+  - Hangout (🎉): weight 1.0
+  - Call (📞): weight 0.6 — lower weight
+  - Online chat (💬): weight 0.3 — lowest
+  - Other (📦): weight 0.5
+
+### The Gap Metric
+```
+gap = quality_score - quantity_score
+```
+- `gap > 0`: you're enjoying this friendship more than your effort level — rewarding
+- `gap < 0`: you're investing more than you're getting — unbalanced
+- `gap ≈ 0`: effort and reward are aligned
+
+---
+
+## What the App Does
+
+### 1. Log a Hangout
+When you hang out with a friend, log it:
+- Who (friend or friends if group hangout)
+- When (date, defaults to today)
+- How long (30 min / 1 hr / 2 hr / half-day / full-day / trip)
+- What kind of interaction (meal / activity / call / trip / hangout / online / other)
+- How you felt afterward (1–5 stars)
+- Optional note
+
+### 2. See Your Scatter Plot
+The home screen shows the scatter plot of all friends:
+- X = quantity score (how much you engage)
+- Y = quality score (how good you feel)
+- Each dot = one friend, color-coded
+- Hover/tap to see the friend's name and scores
+
+Color coding:
+- Green dots: gap > 0 (rewarding friendship)
+- Red dots: gap < 0 (unbalanced — you're putting in more than you get)
+- Blue dots: gap ≈ 0 (balanced)
+
+### 3. Get Recommendations
+The app recommends who to hang out with next based on:
+- Friends with NEGATIVE gap (unbalanced — you're not enjoying the effort)
+  → Recommendation: "You should hang out with [X] — you've been putting in effort but not feeling it. Either reconnect meaningfully or it's OK to pull back."
+- Friends with POSITIVE gap but low quantity (rewarding but rare)
+  → Recommendation: "You should hang out with [X] — these hangouts always feel great but you haven't seen them in a while."
+- Friends with low overall scores but not negative gap
+  → Recommendation: "Check in with [X] — scores are low, might be drifting."
+
+---
 
 ## Data Model
 
 ### Friend
 ```json
 {
-  "id": "uuid-string",
+  "id": "uuid",
   "name": "Alice",
-  "avatar": "emoji-or-initials",
   "tags": ["college", "climbing"],
   "addedAt": 1745000000000
 }
 ```
 
-### Hangout (Interaction Log)
+### Hangout Log
 ```json
 {
-  "id": "uuid-string",
-  "friendIds": ["friend-uuid-1", "friend-uuid-2"],
-  "type": "meal" | "activity" | "call" | "trip" | "hangout" | "online" | "other",
+  "id": "uuid",
+  "friendIds": ["uuid-1", "uuid-2"],
+  "type": "meal|activity|call|trip|hangout|online|other",
+  "duration": "30min|1hr|2hr|halfday|fullday|trip",
   "quality": 1-5,
   "note": "Optional description",
   "date": "2026-04-25",
@@ -41,129 +130,39 @@ Every friendship has a **Relationship Score** that decays over time if you don't
 }
 ```
 
-### Interaction Types
-| Type      | Icon | Label (EN)     | Label (ZH) | Base Score Weight |
-|-----------|------|----------------|-------------|-------------------|
-| meal      | 🍜   | Meal           | 吃饭        | 1.0               |
-| activity  | 🏃   | Activity       | 活动        | 1.2               |
-| call      | 📞   | Call / Video   | 通话        | 0.6               |
-| trip      | ✈️   | Trip           | 旅行        | 2.0               |
-| hangout   | 🎉   | Hangout        | 聚会        | 1.0               |
-| online    | 💬   | Online Chat    | 线上聊天     | 0.3               |
-| other     | 📦   | Other          | 其他        | 0.5               |
+---
 
-### Quality Rating
-| Stars | Meaning               |
-|-------|-----------------------|
-| 1     | Awkward / forced      |
-| 2     | Fine, nothing special |
-| 3     | Good time             |
-| 4     | Great connection      |
-| 5     | Unforgettable         |
+## Pages
 
-## Relationship Score Algorithm
+1. **Home (Scatter Plot)** — `/`
+   - Full scatter plot visualization (CSS/SVG, no chart library needed)
+   - Recommendation card at top: "Hang out with X because..."
+   - Quick stats: total friends, hangouts this week
 
-Each friend has a computed **Relationship Score (RS)** from 0–100.
+2. **Friends List** — `/friends`
+   - All friends sorted by gap (most negative at top = needs attention)
+   - Each row: avatar, name, quantity bar, quality bar, gap indicator
 
-```
-RS = min(100, sum of weighted interaction scores)
+3. **Friend Detail** — `/friends/:id`
+   - Scatter plot focus on ONE friend (history of their dots over time)
+   - Hangout history timeline with this friend
+   - Log new hangout button
 
-For each hangout with this friend:
-  interaction_score = base_weight × quality × recency_multiplier
+4. **Log Hangout** — `/log`
+   - Friend selector (multi-select for group hangouts)
+   - Type, duration, quality stars, date, note
 
-Recency multiplier (exponential decay):
-  recency = e^(-days_since_hangout / 60)
-```
+5. **Stats** — `/stats`
+   - Global scatter plot
+   - Tier distribution
+   - Most neglected / Most rewarding friends
 
-- Recent, high-quality, in-person interactions score highest
-- Score decays naturally over ~2 months without contact
-- Trips and activities weigh more than calls and chats
-- Group hangouts count for all friends present
+---
 
-### Score Tiers
-| Range   | Tier         | Label (ZH) | Color   |
-|---------|-------------|-------------|---------|
-| 80–100  | Close       | 亲密        | #10B981 |
-| 50–79   | Good        | 不错        | #3B82F6 |
-| 20–49   | Fading      | 疏远中      | #F59E0B |
-| 0–19    | Neglected   | 该联系了    | #EF4444 |
-
-## Pages / Views
-
-### 1. Home (Dashboard) — `/`
-- **Recommendation card**: "You should hang out with..." — shows the friend with the highest priority (low score + long time since last seen + historically high quality)
-- Quick stats: total friends, hangouts this month, average score
-- **Recent hangouts** (last 5)
-- Floating "+" button to log a new hangout
-
-### 2. Friends List — `/friends`
-- List of all friends sorted by relationship score (descending)
-- Each card shows: avatar/emoji, name, tags, score bar, last hangout date, days since last seen
-- Color-coded score indicator (green/blue/yellow/red)
-- Tap to view friend detail
-- "Add Friend" button
-
-### 3. Friend Detail — `/friends/:id`
-- Friend name, avatar, tags
-- Current relationship score (large, color-coded)
-- Score trend (simple sparkline: last 4 weeks)
-- Hangout history with this friend (chronological)
-- Quick "Log Hangout" button pre-filled with this friend
-
-### 4. Log Hangout — `/log`
-- Friend selector (multi-select for group hangouts)
-- Interaction type selector (grid of icons)
-- Quality rating (1–5 stars)
-- Date picker (defaults to today)
-- Optional note
-- Save → redirects to home with updated recommendation
-
-### 5. Stats / Insights — `/stats`
-- Month selector
-- Distribution: how many friends in each score tier (bar chart, CSS-only)
-- Hangout frequency: total hangouts per week/month
-- Top friends by score
-- Most neglected friends (sorted by days since last hangout)
-- Social diversity: breakdown by interaction type
-
-## Navigation
-- Bottom tab bar with 4 tabs: Home, Friends, Log (+), Stats
-- Floating "+" button on Home for quick log
-
-## Storage
-- Key: `hangout_friends` — JSON array of Friend objects
-- Key: `hangout_logs` — JSON array of Hangout objects
-- Composable: `useFriends()` — reactive friend list + CRUD
-- Composable: `useHangouts()` — reactive hangout list + CRUD
-- Composable: `useRelationshipScore(friendId)` — computed score for a friend
-- Composable: `useRecommendation()` — who to hang out with next
-
-## Recommendation Algorithm
-
-Priority score for "who to hang out with next":
-
-```
-priority = (100 - relationship_score) × time_factor × affinity_bonus
-
-time_factor = log2(days_since_last_hangout + 1)
-affinity_bonus = average_quality_with_this_friend / 3
-```
-
-- Friends you haven't seen in a while AND historically enjoy hanging out with get the highest priority
-- Friends with consistently low quality scores get deprioritized (the app won't nag you to see people you don't enjoy)
-
-## UI Design Principles
-- Mobile-first: max-width 480px centered
-- Clean white background, subtle shadows
-- Score-tier color coding throughout (green/blue/yellow/red)
-- Rounded cards, 16px padding
-- Chinese labels with English subtitles
-- Safe-area padding for notch devices
-- Warm, friendly aesthetic — this is about people, not spreadsheets
-
-## Mini-App Compatibility Notes
-- Hash-based routing (`createWebHashHistory`)
-- No external font loading (use system fonts)
-- No `window.open` or external links
-- LocalStorage is available in WeChat webview
-- Viewport meta tag for proper scaling
+## Tech Stack
+- Vue 3 (Composition API) + Vite
+- Tailwind CSS 3
+- Vue Router 4 (hash mode)
+- LocalStorage via composables
+- No external chart library — scatter plot drawn with SVG or CSS grid
+- Language: JavaScript (no TypeScript)
