@@ -1,34 +1,22 @@
 <script setup>
 import { useRoute } from 'vue-router'
-import { computed } from 'vue'
 
 const route = useRoute()
 
 const tabs = [
-  { name: 'home', path: '/', icon: '🏠', label: '首页', sub: 'Home' },
-  { name: 'history', path: '/history', icon: '📋', label: '账单', sub: 'History' },
-  { name: 'summary', path: '/summary', icon: '📊', label: '统计', sub: 'Summary' },
+  { name: 'home', path: '/', icon: '🏠', label: '首页' },
+  { name: 'friends', path: '/friends', icon: '👥', label: '朋友' },
+  { name: 'log', path: '/log', icon: '➕', label: '记录' },
+  { name: 'stats', path: '/stats', icon: '📊', label: '统计' },
 ]
-
-const showTabBar = computed(() => route.name !== 'add')
 </script>
 
 <template>
   <div class="mx-auto max-w-[480px] min-h-screen bg-white relative pb-20">
     <router-view />
 
-    <!-- Floating add button -->
-    <router-link
-      v-if="showTabBar"
-      to="/add"
-      class="fixed bottom-22 left-1/2 -translate-x-1/2 z-50 w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl shadow-lg active:scale-95 transition-transform no-underline"
-      style="max-width: 480px"
-    >
-      +
-    </router-link>
-
     <!-- Bottom tab bar -->
-    <nav v-if="showTabBar" class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-200 z-40" style="padding-bottom: var(--safe-bottom)">
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-200 z-40" style="padding-bottom: var(--safe-bottom)">
       <div class="flex justify-around py-2">
         <router-link
           v-for="tab in tabs"
