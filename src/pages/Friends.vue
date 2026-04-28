@@ -2,9 +2,11 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFriends } from '../composables/useFriends'
+import { useScoring } from '../composables/useScoring'
 
 const router = useRouter()
 const { friends, addFriend, deleteFriend } = useFriends()
+const { scoredFriends } = useScoring()
 
 const showAdd = ref(false)
 const newName = ref('')
@@ -71,20 +73,26 @@ function handleDelete(friend) {
 
     <div v-else class="space-y-2">
       <div
-        v-for="f in friends"
-        :key="f.id"
+        v-for="s in scoredFriends"
+        :key="s.friend.id"
         class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 cursor-pointer active:bg-gray-100 transition-colors"
-        @click="router.push(`/friends/${f.id}`)"
+        @click="router.push(`/friends/${s.friend.id}`)"
       >
         <div>
-          <p class="text-sm font-medium text-gray-700">{{ f.name }}</p>
-          <p v-if="f.tags.length" class="text-xs text-gray-400 mt-0.5">
-            {{ f.tags.join(' · ') }}
+          <p class="text-sm font-medium text-gray-700">{{ s.friend.name }}</p>
+          <p v-if="s.friend.tags.length" class="text-xs text-gray-400 mt-0.5">
+            {{ s.friend.tags.join(' · ') }}
           </p>
         </div>
         <div class="flex items-center gap-3">
+          <span
+            class="text-xs font-medium"
+            :class="s.gap > 5 ? 'text-green-500' : s.gap < -5 ? 'text-red-500' : 'text-blue-500'"
+          >
+            {{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}
+          </span>
           <button
-            @click.stop="handleDelete(f)"
+            @click.stop="handleDelete(s.friend)"
             class="text-gray-300 text-xs bg-transparent border-none cursor-pointer hover:text-red-400"
           >删除</button>
           <span class="text-gray-300 text-sm">›</span>

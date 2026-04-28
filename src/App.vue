@@ -12,11 +12,11 @@ const tabs = [
 </script>
 
 <template>
-  <div class="mx-auto max-w-[480px] min-h-screen bg-white relative pb-20">
+  <div class="mx-auto max-w-[480px] min-h-screen bg-white relative" style="padding-top: var(--safe-top); padding-bottom: calc(4rem + var(--safe-bottom))">
     <router-view />
 
     <!-- Bottom tab bar -->
-    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-200 z-40" style="padding-bottom: var(--safe-bottom)">
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] bg-white border-t border-gray-200 z-40" style="padding-bottom: env(safe-area-inset-bottom, 0px)">
       <div class="flex justify-around py-2">
         <router-link
           v-for="tab in tabs"
