@@ -1,7 +1,7 @@
 # 找谁玩 — Project Progress
 
 ## Last Updated
-2026-04-28 (UX round 1)
+2026-04-28 (scoring fix)
 
 ## Current Status
 
@@ -35,6 +35,10 @@
   - ✅ Edit/Delete buttons added to FriendDetail header (Edit deep-links to `/friends?edit=<id>`)
   - ✅ ScatterPlot popup friend name now a router-link to friend detail
   - ✅ FriendDetail's 记录聚会 button passes `?friend=<id>` to pre-select friend in LogHangout
+- **2026-04-28 Scoring fix — type weight removed from quality:**
+  - Bug: `quality = avg_rating × avg_type_weight × 20` penalized friends whose hangouts were mostly online (weight 0.3) regardless of how good they felt
+  - Fix: `quality = avg_rating × 20`. Type weight no longer enters the quality axis
+  - Effect on screenshots: 周杰 (4 online @ 3.75★) moves up on quality; gap goes from −62 toward neutral/positive; recommendation shifts away from him toward 陈思思 (positive-gap stale)
 
 ### 🚧 In Progress
 - Mobile / WeChat in-app browser testing of the live deploy
@@ -62,10 +66,15 @@ wechat/           → (Unused for Route A) Mini Program wrapper, kept for future
 wechat/h5/        → (Unused for Route A) WebView asset target for Mini Program
 
 ## Scoring Model
-- Quantity: log(1 + total_hangouts) × decay(days_since_last ~60 days)
-- Quality: weighted_average(quality × type_weight)
-- Type weights: trip 2.0, activity 1.2, meal 1.0, hangout 1.0, call 0.6, online 0.3, other 0.5
-- Gap = quality - quantity; positive = rewarding, negative = unbalanced
+- Quantity (raw): log(1 + Σ duration_mult) × 25 × (0.3 + 0.7 × exp(-days_since_last/60))
+  - Duration multipliers: 30min 0.5, 1hr 1, 2hr 1.5, halfday 2, fullday 3, trip 4
+- Quality (raw): average_rating × 20 (so 5 stars → 100, 1 star → 20)
+  - Type weight is intentionally NOT applied here. It conflates "investment" with "how it felt" — a 4-star online call is still a 4-star experience.
+- Both raw scores are z-score normalized so the population mean lands at (50, 50)
+- Gap = normalized quality − normalized quantity
+  - Within ±gapThreshold (user-tunable, default 12) → 平衡
+  - > +threshold → 很值得 (great experience relative to time invested)
+  - < −threshold → 不平衡 (lots of time, mediocre experience)
 
 ## Recommendation Logic
 1. Negative gap + active in last 30 days → "reconnect meaningfully or pull back"

@@ -1,8 +1,6 @@
 import { computed } from 'vue'
 import { useFriends } from './useFriends'
 
-const TYPE_WEIGHTS = { trip: 2.0, activity: 1.2, meal: 1.0, hangout: 1.0, call: 0.6, online: 0.3, other: 0.5 }
-
 // Duration multiplier for quantity scoring
 const DURATION_MULT = { '30min': 0.5, '1hr': 1, '2hr': 1.5, 'halfday': 2, 'fullday': 3, 'trip': 4 }
 
@@ -17,11 +15,13 @@ function computeRawQuantityScore(friendId, hangouts) {
 }
 
 function computeRawQualityScore(friendId, hangouts) {
+  // Quality = pure average rating (1-5 stars → 20-100). Type weight intentionally
+  // excluded: it represents "investment" (belongs in quantity), not how the
+  // experience felt. A 4-star online call is still a 4-star experience.
   const friendHangouts = hangouts.filter(h => h.friendIds.includes(friendId))
   if (friendHangouts.length === 0) return 0
   const avgQuality = friendHangouts.reduce((sum, h) => sum + h.quality, 0) / friendHangouts.length
-  const avgWeight = friendHangouts.reduce((sum, h) => sum + (TYPE_WEIGHTS[h.type] || 0.5), 0) / friendHangouts.length
-  return avgQuality * avgWeight * 20
+  return avgQuality * 20
 }
 
 /**
