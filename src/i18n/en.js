@@ -104,6 +104,9 @@ export default {
     hangoutHistory: 'Hangout history',
     noHangouts: 'No hangouts logged yet',
     logHangout: 'Log a hangout',
+    editHangout: 'Edit',
+    deleteHangout: 'Delete',
+    confirmDeleteHangout: 'Delete this hangout?',
   },
   log: {
     back: 'Back',
@@ -127,6 +130,8 @@ export default {
     note: 'Note',
     notePlaceholder: 'Anything to remember...',
     submit: 'Save',
+    editTitle: 'Edit hangout',
+    update: 'Update',
     confirmDeleteCustom: 'Delete custom {kind} "{label}"?',
     typeLabel: 'type',
     durationLabel: 'duration',

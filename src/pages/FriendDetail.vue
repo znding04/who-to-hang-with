@@ -11,7 +11,7 @@ import ScatterPlot from '../components/ScatterPlot.vue'
 
 const route = useRoute()
 const router = useRouter()
-const { getFriendById, getHangoutsForFriend, deleteFriend } = useFriends()
+const { getFriendById, getHangoutsForFriend, deleteFriend, deleteHangout } = useFriends()
 const { scoredFriends } = useScoring()
 const { gapThreshold } = useGapThreshold()
 const { customTypes } = useCustomTypes()
@@ -62,6 +62,16 @@ function gapTone(gap) {
   if (gap < -gapThreshold.value) return 'text-rose-500'
   if (gap > gapThreshold.value) return 'text-emerald-600'
   return 'text-stone-500'
+}
+
+function handleEditHangout(hangoutId) {
+  router.push({ path: '/log', query: { edit: hangoutId } })
+}
+
+function handleDeleteHangout(hangoutId) {
+  if (confirm(t('friendDetail.confirmDeleteHangout'))) {
+    deleteHangout(hangoutId)
+  }
 }
 
 function rating(n) {
@@ -201,6 +211,16 @@ const infoRows = computed(() => {
               <span class="text-[11.5px] text-amber-500 font-medium tabular-nums">★ {{ rating(h.quality) }}</span>
             </div>
             <p v-if="h.note" class="text-[12.5px] text-stone-500 mt-1.5 leading-relaxed">{{ h.note }}</p>
+            <div class="flex items-center gap-2 mt-2">
+              <button
+                @click="handleEditHangout(h.id)"
+                class="px-2 py-0.5 text-[11px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded border-none cursor-pointer touch-manipulation"
+              >{{ t('friendDetail.editHangout') }}</button>
+              <button
+                @click="handleDeleteHangout(h.id)"
+                class="px-2 py-0.5 text-[11px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded border-none cursor-pointer touch-manipulation"
+              >{{ t('friendDetail.deleteHangout') }}</button>
+            </div>
           </div>
         </div>
       </div>

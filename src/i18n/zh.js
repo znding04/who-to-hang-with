@@ -104,6 +104,9 @@ export default {
     hangoutHistory: '聚会记录',
     noHangouts: '还没有聚会记录',
     logHangout: '记录聚会',
+    editHangout: '编辑',
+    deleteHangout: '删除',
+    confirmDeleteHangout: '确定删除这条聚会记录？',
   },
   log: {
     back: '返回',
@@ -127,6 +130,8 @@ export default {
     note: '备注',
     notePlaceholder: '记点什么...',
     submit: '保存',
+    editTitle: '编辑聚会',
+    update: '更新',
     confirmDeleteCustom: '删除自定义{kind}「{label}」？',
     typeLabel: '类型',
     durationLabel: '时长',

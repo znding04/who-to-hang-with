@@ -199,6 +199,18 @@ export function useFriends() {
     return hangout
   }
 
+  function updateHangout(id, updates) {
+    const idx = _hangouts.value.findIndex((h) => h.id === id)
+    if (idx < 0) return null
+    _hangouts.value[idx] = { ..._hangouts.value[idx], ...updates }
+
+    const { isLoggedIn } = useAuth()
+    if (isLoggedIn.value) {
+      api.updateHangout(id, updates).catch((err) => console.error('Failed to sync hangout update:', err))
+    }
+    return _hangouts.value[idx]
+  }
+
   function deleteHangout(id) {
     _hangouts.value = _hangouts.value.filter((h) => h.id !== id)
 
@@ -206,6 +218,10 @@ export function useFriends() {
     if (isLoggedIn.value) {
       api.deleteHangout(id).catch((err) => console.error('Failed to sync hangout delete:', err))
     }
+  }
+
+  function getHangoutById(id) {
+    return _hangouts.value.find((h) => h.id === id)
   }
 
   function getHangoutsForFriend(friendId) {
@@ -229,7 +245,9 @@ export function useFriends() {
     deleteFriend,
     getFriendById,
     addHangout,
+    updateHangout,
     deleteHangout,
+    getHangoutById,
     getHangoutsForFriend,
     deleteSeedData,
     hasSeedData,

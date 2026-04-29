@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFriends } from '../composables/useFriends'
 import { useCustomTypes } from '../composables/useCustomTypes'
@@ -9,10 +9,13 @@ import { HANGOUT_TYPES, DURATION_OPTIONS, displayLabel } from '../types/index.js
 
 const router = useRouter()
 const route = useRoute()
-const { friends, addFriend, addHangout } = useFriends()
+const { friends, addFriend, addHangout, getHangoutById, updateHangout } = useFriends()
 const { customTypes, addCustomType, removeCustomType } = useCustomTypes()
 const { customDurations, addCustomDuration, removeCustomDuration } = useCustomDurations()
 const { t } = useI18n()
+
+const editId = ref(null)
+const isEditMode = computed(() => !!editId.value)
 
 const selectedFriendIds = ref([])
 const hangoutType = ref('meal')
@@ -41,9 +44,23 @@ const showAddFriend = ref(false)
 const newFriendName = ref('')
 
 onMounted(() => {
-  const id = route.query.friend
-  if (id && friends.value.some((f) => f.id === id)) {
-    selectedFriendIds.value = [id]
+  const friendParam = route.query.friend
+  if (friendParam && friends.value.some((f) => f.id === friendParam)) {
+    selectedFriendIds.value = [friendParam]
+  }
+
+  const editParam = route.query.edit
+  if (editParam) {
+    const hangout = getHangoutById(editParam)
+    if (hangout) {
+      editId.value = editParam
+      selectedFriendIds.value = [...(hangout.friendIds || [])]
+      hangoutType.value = hangout.type || 'meal'
+      duration.value = hangout.duration || '1hr'
+      quality.value = hangout.quality || 6
+      date.value = hangout.date || new Date().toISOString().slice(0, 10)
+      note.value = hangout.note || hangout.notes || ''
+    }
   }
 })
 
@@ -112,16 +129,27 @@ const canSubmit = computed(() => selectedFriendIds.value.length > 0)
 
 function submit() {
   if (!canSubmit.value) return
-  addHangout({
-    friendIds: [...selectedFriendIds.value],
-    type: hangoutType.value,
-    duration: duration.value,
-    quality: quality.value,
-    note: note.value,
-    date: date.value,
-    isSeed: false,
-  })
-  router.push('/friends')
+  if (isEditMode.value) {
+    updateHangout(editId.value, {
+      friendIds: [...selectedFriendIds.value],
+      type: hangoutType.value,
+      duration: duration.value,
+      quality: quality.value,
+      note: note.value,
+      date: date.value,
+    })
+  } else {
+    addHangout({
+      friendIds: [...selectedFriendIds.value],
+      type: hangoutType.value,
+      duration: duration.value,
+      quality: quality.value,
+      note: note.value,
+      date: date.value,
+      isSeed: false,
+    })
+  }
+  router.back()
 }
 </script>
 
@@ -137,7 +165,7 @@ function submit() {
       </router-link>
       <div>
         <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400 text-right">{{ t('log.tagline') }}</p>
-        <h1 class="text-[18px] font-semibold text-stone-900 tracking-tight">{{ t('log.title') }}</h1>
+        <h1 class="text-[18px] font-semibold text-stone-900 tracking-tight">{{ isEditMode ? t('log.editTitle') : t('log.title') }}</h1>
       </div>
     </div>
 
@@ -326,7 +354,7 @@ function submit() {
       class="w-full py-3 rounded-xl text-[15px] font-medium border-none cursor-pointer transition-colors"
       :class="canSubmit ? 'bg-stone-900 text-white active:bg-stone-800' : 'bg-stone-100 text-stone-400 cursor-not-allowed'"
     >
-      {{ t('log.submit') }}
+      {{ isEditMode ? t('log.update') : t('log.submit') }}
     </button>
   </div>
 </template>
