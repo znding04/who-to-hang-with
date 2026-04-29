@@ -113,8 +113,9 @@ function gapToneClass(gap) {
       <!-- Friend dots -->
       <g v-for="s in scores" :key="s.friend.id" class="cursor-pointer" @click="handleDotClick(s, $event)">
         <text
-          :x="x(s.quantity) + 14"
-          :y="y(s.quality) + 3"
+          :x="x(s.quantity)"
+          :y="y(s.quality) - 13"
+          text-anchor="middle"
           font-size="9"
           fill="#44403c"
           :opacity="highlightId && highlightId !== s.friend.id ? 0.2 : 0.85"

@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 const KEY = 'wtpw_gap_threshold'
 const DEFAULT = 12
 const MIN = 2
-const MAX = 30
+const MAX = 100
 
 function load() {
   const raw = Number(localStorage.getItem(KEY))
