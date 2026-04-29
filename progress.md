@@ -1,7 +1,7 @@
 # 找谁玩 — Project Progress
 
 ## Last Updated
-2026-04-28 (scoring fix)
+2026-04-28 (10-star + view mode + diversified seed)
 
 ## Current Status
 
@@ -39,6 +39,22 @@
   - Bug: `quality = avg_rating × avg_type_weight × 20` penalized friends whose hangouts were mostly online (weight 0.3) regardless of how good they felt
   - Fix: `quality = avg_rating × 20`. Type weight no longer enters the quality axis
   - Effect on screenshots: 周杰 (4 online @ 3.75★) moves up on quality; gap goes from −62 toward neutral/positive; recommendation shifts away from him toward 陈思思 (positive-gap stale)
+- **2026-04-28 10-star scale + view mode toggle + diversified seed:**
+  - Quality rating switched from 1-5 to 1-10 for finer granularity
+    - LogHangout picker shows 10 stars (text-xl, gap-0.5 to fit on phone)
+    - FriendDetail history shows "★ 8/10" (compact text instead of 10 ★ glyphs)
+    - useScoring quality formula: avg × 10 (so 10/10 → raw 100)
+    - Migration: existing hangouts with quality ≤ 5 get doubled on app load (schema v1 → v2)
+  - useViewMode composable: toggle between **标准化** (z-score normalized, mean at (50,50)) and **绝对值** (raw scores capped to [0,100])
+    - Toggle UI lives in ScatterPlot above the threshold tuner
+    - Toggle is global: insights/recommendations re-evaluate based on the current mode
+  - Seed data v2 — 23 friends with full rating range:
+    - 20 existing friends rebalanced to 1-10 scale
+    - 3 new "draining" friends with high frequency, low quality:
+      - 钱总 (上司, 8 hangouts in 60 days, ratings 1-4)
+      - 老周叔 (远亲, 5 hangouts, ratings 2-3)
+      - 阿强 (老同学, 4 hangouts of complaints, ratings 2-4)
+    - SEED_VERSION bumped to 2; old seed data is wiped and replaced on first load
 
 ### 🚧 In Progress
 - Mobile / WeChat in-app browser testing of the live deploy
@@ -68,10 +84,12 @@ wechat/h5/        → (Unused for Route A) WebView asset target for Mini Program
 ## Scoring Model
 - Quantity (raw): log(1 + Σ duration_mult) × 25 × (0.3 + 0.7 × exp(-days_since_last/60))
   - Duration multipliers: 30min 0.5, 1hr 1, 2hr 1.5, halfday 2, fullday 3, trip 4
-- Quality (raw): average_rating × 20 (so 5 stars → 100, 1 star → 20)
-  - Type weight is intentionally NOT applied here. It conflates "investment" with "how it felt" — a 4-star online call is still a 4-star experience.
-- Both raw scores are z-score normalized so the population mean lands at (50, 50)
-- Gap = normalized quality − normalized quantity
+- Quality (raw): average_rating × 10 (so 10/10 → 100, 1/10 → 10)
+  - Type weight is intentionally NOT applied here. It conflates "investment" with "how it felt" — a 8/10 online call is still an 8/10 experience.
+- View mode (`useViewMode`):
+  - **标准化** (default): both scores z-score normalized so population mean lands at (50, 50)
+  - **绝对值**: raw scores clipped to [0, 100]
+- Gap = quality − quantity (computed from whichever mode is active)
   - Within ±gapThreshold (user-tunable, default 12) → 平衡
   - > +threshold → 很值得 (great experience relative to time invested)
   - < −threshold → 不平衡 (lots of time, mediocre experience)

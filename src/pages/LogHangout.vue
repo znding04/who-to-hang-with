@@ -10,21 +10,17 @@ const route = useRoute()
 const { friends, addFriend, addHangout } = useFriends()
 const { customTypes, addCustomType } = useCustomTypes()
 
-// Form state
 const selectedFriendIds = ref([])
 const hangoutType = ref('meal')
 const duration = ref('1hr')
-const quality = ref(3)
+const quality = ref(6)
 const date = ref(new Date().toISOString().slice(0, 10))
 const note = ref('')
 
-// Custom type input (only used when 其他 is selected)
 const customTypeLabel = ref('')
 
-// Predefined + saved custom types in the picker
 const allTypes = computed(() => [...HANGOUT_TYPES, ...customTypes.value])
 
-// Inline add friend
 const showAddFriend = ref(false)
 const newFriendName = ref('')
 
@@ -58,8 +54,6 @@ const canSubmit = computed(() => selectedFriendIds.value.length > 0)
 function submit() {
   if (!canSubmit.value) return
 
-  // If 其他 is selected and the user typed a custom label, persist it as a new type
-  // and use the new type's value for this hangout.
   let typeToSave = hangoutType.value
   if (hangoutType.value === 'other' && customTypeLabel.value.trim()) {
     const created = addCustomType(customTypeLabel.value)
@@ -79,80 +73,89 @@ function submit() {
 </script>
 
 <template>
-  <div class="px-4 pt-6 pb-6">
+  <div class="px-5 pt-9 pb-2">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-5">
-      <router-link to="/" class="text-blue-500 text-sm no-underline">&larr; 返回</router-link>
-      <h1 class="text-lg font-bold text-gray-800">记录聚会</h1>
-      <div class="w-10"></div>
+    <div class="flex items-center justify-between mb-9">
+      <router-link to="/" class="text-stone-500 text-[13px] no-underline flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18 L9 12 L15 6" />
+        </svg>
+        返回
+      </router-link>
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400 text-right">Log</p>
+        <h1 class="text-[18px] font-semibold text-stone-900 tracking-tight">记录聚会</h1>
+      </div>
     </div>
 
     <!-- Friend selector -->
-    <section class="mb-5">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">和谁玩了？</h2>
-      <div v-if="friends.length === 0" class="text-sm text-gray-400 mb-2">
+    <section class="mb-7">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">和谁玩了</p>
+      <div v-if="friends.length === 0" class="text-[13px] text-stone-400 mb-2">
         还没有朋友，先添加一个吧
       </div>
-      <div class="space-y-1 max-h-48 overflow-y-auto">
+      <div class="rounded-xl overflow-hidden max-h-56 overflow-y-auto" style="border: 1px solid #ece9e4">
         <label
-          v-for="f in friends"
+          v-for="(f, i) in friends"
           :key="f.id"
-          class="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-50 cursor-pointer"
-          :class="selectedFriendIds.includes(f.id) ? 'ring-2 ring-blue-400 bg-blue-50' : ''"
+          class="flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors"
+          :class="[
+            i > 0 ? 'border-t' : '',
+            selectedFriendIds.includes(f.id) ? 'bg-stone-900 text-white' : 'bg-white active:bg-stone-50',
+          ]"
+          :style="i > 0 ? 'border-color: #ece9e4' : ''"
         >
           <input
             type="checkbox"
             :checked="selectedFriendIds.includes(f.id)"
             @change="toggleFriend(f.id)"
-            class="w-4 h-4 accent-blue-500"
+            class="w-4 h-4"
+            style="accent-color: #1c1917"
           />
-          <span class="text-sm text-gray-700">{{ f.name }}</span>
-          <span v-if="f.tags.length" class="text-xs text-gray-400">{{ f.tags.join(', ') }}</span>
+          <span class="text-[14px] flex-1" :class="selectedFriendIds.includes(f.id) ? 'text-white' : 'text-stone-800'">{{ f.name }}</span>
+          <span v-if="f.tags.length" class="text-[11px]" :class="selectedFriendIds.includes(f.id) ? 'text-stone-300' : 'text-stone-400'">{{ f.tags.join(', ') }}</span>
         </label>
       </div>
 
-      <!-- Inline add friend -->
       <button
         v-if="!showAddFriend"
         @click="showAddFriend = true"
-        class="mt-2 text-sm text-blue-500 bg-transparent border-none cursor-pointer"
+        class="mt-2.5 text-[12.5px] text-stone-500 hover:text-stone-900 bg-transparent border-none cursor-pointer"
       >
         + 添加新朋友
       </button>
-      <div v-else class="flex gap-2 mt-2">
+      <div v-else class="flex gap-2 mt-2.5">
         <input
           v-model="newFriendName"
           placeholder="朋友名字"
-          class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+          class="flex-1 bg-white rounded-lg px-3.5 py-2 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+          style="border: 1px solid #ece9e4"
           @keyup.enter="handleAddFriend"
         />
         <button
           @click="handleAddFriend"
-          class="px-3 py-2 bg-blue-500 text-white text-sm rounded-lg border-none cursor-pointer"
-        >
-          添加
-        </button>
+          class="px-3.5 py-2 bg-stone-900 text-white text-[13px] rounded-lg border-none cursor-pointer"
+        >添加</button>
         <button
           @click="showAddFriend = false; newFriendName = ''"
-          class="px-3 py-2 bg-gray-200 text-gray-600 text-sm rounded-lg border-none cursor-pointer"
-        >
-          取消
-        </button>
+          class="px-3.5 py-2 bg-stone-100 text-stone-600 text-[13px] rounded-lg border-none cursor-pointer"
+        >取消</button>
       </div>
     </section>
 
     <!-- Type picker -->
-    <section class="mb-5">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">类型</h2>
+    <section class="mb-7">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">类型</p>
       <div class="flex flex-wrap gap-2">
         <button
           v-for="t in allTypes"
           :key="t.value"
           @click="hangoutType = t.value; customTypeLabel = ''"
-          class="px-3 py-1.5 rounded-full text-sm border cursor-pointer transition-colors"
+          class="px-3.5 py-1.5 rounded-full text-[13px] cursor-pointer transition-colors"
           :class="hangoutType === t.value
-            ? 'bg-blue-500 text-white border-blue-500'
-            : 'bg-white text-gray-600 border-gray-300'"
+            ? 'bg-stone-900 text-white'
+            : 'bg-white text-stone-600'"
+          :style="hangoutType === t.value ? 'border: 1px solid #1c1917' : 'border: 1px solid #ece9e4'"
         >
           {{ t.icon }} {{ t.label }}
         </button>
@@ -161,64 +164,67 @@ function submit() {
         v-if="hangoutType === 'other'"
         v-model="customTypeLabel"
         placeholder="自定义类型名（如：桌游、剧本杀）"
-        class="mt-2 w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="mt-2.5 w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
-      <p v-if="hangoutType === 'other' && customTypeLabel.trim()" class="text-xs text-gray-400 mt-1">
+      <p v-if="hangoutType === 'other' && customTypeLabel.trim()" class="text-[11.5px] text-stone-400 mt-1.5">
         保存后 "{{ customTypeLabel.trim() }}" 会出现在类型选项里
       </p>
     </section>
 
     <!-- Duration picker -->
-    <section class="mb-5">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">时长</h2>
+    <section class="mb-7">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">时长</p>
       <div class="flex flex-wrap gap-2">
         <button
           v-for="d in DURATION_OPTIONS"
           :key="d.value"
           @click="duration = d.value"
-          class="px-3 py-1.5 rounded-full text-sm border cursor-pointer transition-colors"
+          class="px-3.5 py-1.5 rounded-full text-[13px] cursor-pointer transition-colors"
           :class="duration === d.value
-            ? 'bg-blue-500 text-white border-blue-500'
-            : 'bg-white text-gray-600 border-gray-300'"
+            ? 'bg-stone-900 text-white'
+            : 'bg-white text-stone-600'"
+          :style="duration === d.value ? 'border: 1px solid #1c1917' : 'border: 1px solid #ece9e4'"
         >
           {{ d.label }}
         </button>
       </div>
     </section>
 
-    <!-- Quality stars -->
-    <section class="mb-5">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">感受 ({{ quality }}/5)</h2>
-      <div class="flex gap-1">
+    <!-- Quality rating (1-10) -->
+    <section class="mb-7">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">感受 · {{ quality }}/10</p>
+      <div class="flex flex-wrap gap-0.5">
         <button
-          v-for="s in 5"
+          v-for="s in 10"
           :key="s"
           @click="quality = s"
-          class="text-2xl bg-transparent border-none cursor-pointer p-1"
-        >
-          {{ s <= quality ? '★' : '☆' }}
-        </button>
+          class="text-xl bg-transparent border-none cursor-pointer px-0.5 py-0.5 transition-colors touch-manipulation"
+          :class="s <= quality ? 'text-amber-500' : 'text-stone-300'"
+        >★</button>
       </div>
     </section>
 
     <!-- Date picker -->
-    <section class="mb-5">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">日期</h2>
+    <section class="mb-7">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">日期</p>
       <input
         v-model="date"
         type="date"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 outline-none"
+        style="border: 1px solid #ece9e4"
       />
     </section>
 
     <!-- Note -->
-    <section class="mb-6">
-      <h2 class="text-sm font-semibold text-gray-600 mb-2">备注</h2>
+    <section class="mb-9">
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">备注</p>
       <textarea
         v-model="note"
         placeholder="记点什么..."
         rows="3"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none resize-none"
+        style="border: 1px solid #ece9e4"
       />
     </section>
 
@@ -226,8 +232,8 @@ function submit() {
     <button
       @click="submit"
       :disabled="!canSubmit"
-      class="w-full py-3 rounded-xl text-white font-semibold text-base border-none cursor-pointer transition-colors"
-      :class="canSubmit ? 'bg-blue-500 active:bg-blue-600' : 'bg-gray-300 cursor-not-allowed'"
+      class="w-full py-3 rounded-xl text-[15px] font-medium border-none cursor-pointer transition-colors"
+      :class="canSubmit ? 'bg-stone-900 text-white active:bg-stone-800' : 'bg-stone-100 text-stone-400 cursor-not-allowed'"
     >
       保存
     </button>

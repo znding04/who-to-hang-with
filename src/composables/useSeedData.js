@@ -1,14 +1,18 @@
 import { useFriends } from './useFriends'
 
 const SEED_KEY = 'wtpw_seeded'
+const SEED_VERSION = '2'
 
 export function useSeedData() {
-  const { friends, addFriend, addHangout } = useFriends()
+  const { friends, hangouts, addFriend, addHangout } = useFriends()
 
   function seedIfEmpty() {
-    if (localStorage.getItem(SEED_KEY) || friends.value.length > 0) return
+    if (localStorage.getItem(SEED_KEY) === SEED_VERSION) return
 
-    // 20 friends with realistic hangout histories
+    // Wipe any prior seed / stale-schema data and reseed cleanly.
+    friends.value = []
+    hangouts.value = []
+
     const f1 = addFriend({ name: '李明', tags: ['大学', '球友'], phone: '13800001111', birthday: '1995-03-15', location: '北京', howWeMet: '大学同学', values: ['篮球搭档', '靠谱'], importantEvents: ['一起参加校篮球赛', '毕业旅行'] })
     const f2 = addFriend({ name: '王小红', tags: ['同事'], phone: '13800002222', birthday: '1993-07-22', location: '北京', howWeMet: '入职培训', values: ['工作伙伴', '咖啡爱好者'], importantEvents: ['一起完成Q3项目', '生日派对'] })
     const f3 = addFriend({ name: '老张', tags: ['发小', '邻居'], phone: '13900003333', birthday: '1992-01-10', location: '北京', howWeMet: '从小一起长大', values: ['发小情谊', '深夜聊天'], importantEvents: ['童年探险', '高考那年'] })
@@ -30,6 +34,11 @@ export function useSeedData() {
     const f19 = addFriend({ name: '胡丽', tags: ['舞蹈', '兴趣'], phone: '13200001919', birthday: '1998-08-07', location: '北京', howWeMet: '舞蹈工作室', values: ['舞蹈搭档', '舞台表演'], importantEvents: ['年会表演', '舞蹈比赛'] })
     const f20 = addFriend({ name: '高峰', tags: ['家人', '亲戚'], phone: '13100002020', birthday: '1985-04-30', location: '北京', howWeMet: '亲戚关系', values: ['家人支持', '传统节日'], importantEvents: ['春节团聚', '家族旅行'] })
 
+    // Three "draining" friends — high frequency, low quality (truly negative gap)
+    const f21 = addFriend({ name: '钱总', tags: ['上司', '应酬'], phone: '13900002121', birthday: '1975-02-14', location: '北京', howWeMet: '工作汇报', values: ['职场关系'], importantEvents: ['年终汇报', '部门聚餐'] })
+    const f22 = addFriend({ name: '老周叔', tags: ['亲戚', '远房'], phone: '13800002222', birthday: '1968-09-09', location: '北京', howWeMet: '家族聚会', values: ['家族联系'], importantEvents: ['春节拜年'] })
+    const f23 = addFriend({ name: '阿强', tags: ['老同学', '高中'], phone: '13700002323', birthday: '1992-05-20', location: '北京', howWeMet: '高中同班', values: ['老同学'], importantEvents: ['高中毕业'] })
+
     const today = new Date()
     const d = (daysAgo) => {
       const dt = new Date(today)
@@ -38,121 +47,144 @@ export function useSeedData() {
     }
 
     // 李明 — 高频高质，球友
-    addHangout({ friendIds: [f1.id], type: 'activity', duration: '2hr', quality: 5, note: '篮球2小时', date: d(2) })
-    addHangout({ friendIds: [f1.id], type: 'activity', duration: '2hr', quality: 5, note: '篮球训练', date: d(9) })
-    addHangout({ friendIds: [f1.id], type: 'meal', duration: '1hr', quality: 4, note: '球赛后吃饭', date: d(16) })
-    addHangout({ friendIds: [f1.id], type: 'call', duration: '30min', quality: 4, note: '聊近况', date: d(25) })
-    addHangout({ friendIds: [f1.id], type: 'activity', duration: 'fullday', quality: 5, note: '周末球赛', date: d(40) })
+    addHangout({ friendIds: [f1.id], type: 'activity', duration: '2hr', quality: 10, note: '篮球2小时', date: d(2) })
+    addHangout({ friendIds: [f1.id], type: 'activity', duration: '2hr', quality: 9, note: '篮球训练', date: d(9) })
+    addHangout({ friendIds: [f1.id], type: 'meal', duration: '1hr', quality: 8, note: '球赛后吃饭', date: d(16) })
+    addHangout({ friendIds: [f1.id], type: 'call', duration: '30min', quality: 8, note: '聊近况', date: d(25) })
+    addHangout({ friendIds: [f1.id], type: 'activity', duration: 'fullday', quality: 10, note: '周末球赛', date: d(40) })
 
-    // 王小红 — 中频中质，同事关系
-    addHangout({ friendIds: [f2.id], type: 'meal', duration: '1hr', quality: 4, note: '工作午餐', date: d(3) })
-    addHangout({ friendIds: [f2.id], type: 'call', duration: '30min', quality: 3, note: '项目讨论', date: d(14) })
-    addHangout({ friendIds: [f2.id], type: 'meal', duration: '1hr', quality: 4, note: '下午茶', date: d(30) })
-    addHangout({ friendIds: [f2.id], type: 'activity', duration: '2hr', quality: 3, note: '团建活动', date: d(45) })
+    // 王小红 — 同事，中频中质
+    addHangout({ friendIds: [f2.id], type: 'meal', duration: '1hr', quality: 7, note: '工作午餐', date: d(3) })
+    addHangout({ friendIds: [f2.id], type: 'call', duration: '30min', quality: 6, note: '项目讨论', date: d(14) })
+    addHangout({ friendIds: [f2.id], type: 'meal', duration: '1hr', quality: 7, note: '下午茶', date: d(30) })
+    addHangout({ friendIds: [f2.id], type: 'activity', duration: '2hr', quality: 6, note: '团建活动', date: d(45) })
 
-    // 老张 — 低频但高质，发小情谊深
-    addHangout({ friendIds: [f3.id], type: 'hangout', duration: '2hr', quality: 5, note: '叙旧聊天', date: d(15) })
-    addHangout({ friendIds: [f3.id], type: 'meal', duration: '2hr', quality: 5, note: '小时候常去的店', date: d(60) })
-    addHangout({ friendIds: [f3.id], type: 'call', duration: '1hr', quality: 5, note: '深夜长谈', date: d(90) })
+    // 老张 — 发小，低频但深
+    addHangout({ friendIds: [f3.id], type: 'hangout', duration: '2hr', quality: 10, note: '叙旧聊天', date: d(15) })
+    addHangout({ friendIds: [f3.id], type: 'meal', duration: '2hr', quality: 10, note: '小时候常去的店', date: d(60) })
+    addHangout({ friendIds: [f3.id], type: 'call', duration: '1hr', quality: 9, note: '深夜长谈', date: d(90) })
 
     // 小李 — 高频但感觉一般，饭搭子
-    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 3, note: '工作餐', date: d(1) })
-    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 3, note: '外卖', date: d(4) })
-    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 4, note: '新餐厅', date: d(8) })
-    addHangout({ friendIds: [f4.id], type: 'online', duration: '30min', quality: 2, note: '打游戏', date: d(12) })
-    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 3, note: '又吃饭', date: d(20) })
-    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 3, note: '日常约饭', date: d(35) })
-    addHangout({ friendIds: [f4.id], type: 'call', duration: '30min', quality: 3, note: '闲聊', date: d(50) })
+    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 5, note: '工作餐', date: d(1) })
+    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 6, note: '外卖', date: d(4) })
+    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 7, note: '新餐厅', date: d(8) })
+    addHangout({ friendIds: [f4.id], type: 'online', duration: '30min', quality: 4, note: '打游戏', date: d(12) })
+    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 5, note: '又吃饭', date: d(20) })
+    addHangout({ friendIds: [f4.id], type: 'meal', duration: '1hr', quality: 6, note: '日常约饭', date: d(35) })
+    addHangout({ friendIds: [f4.id], type: 'call', duration: '30min', quality: 5, note: '闲聊', date: d(50) })
 
     // 陈思思 — 旅行高质但很少见
-    addHangout({ friendIds: [f5.id], type: 'trip', duration: 'trip', quality: 5, note: '云南旅拍一周', date: d(120) })
-    addHangout({ friendIds: [f5.id], type: 'activity', duration: '2hr', quality: 5, note: '城市摄影', date: d(200) })
+    addHangout({ friendIds: [f5.id], type: 'trip', duration: 'trip', quality: 10, note: '云南旅拍一周', date: d(120) })
+    addHangout({ friendIds: [f5.id], type: 'activity', duration: '2hr', quality: 9, note: '城市摄影', date: d(200) })
 
     // 刘洋 — 健身搭档，互相监督
-    addHangout({ friendIds: [f6.id], type: 'activity', duration: '2hr', quality: 4, note: '健身房', date: d(5) })
-    addHangout({ friendIds: [f6.id], type: 'activity', duration: '2hr', quality: 4, note: '跑步', date: d(12) })
-    addHangout({ friendIds: [f6.id], type: 'meal', duration: '1hr', quality: 4, note: '健身后吃饭', date: d(18) })
-    addHangout({ friendIds: [f6.id], type: 'call', duration: '30min', quality: 3, note: '训练计划', date: d(30) })
-    addHangout({ friendIds: [f6.id], type: 'activity', duration: 'fullday', quality: 5, note: '马拉松', date: d(60) })
+    addHangout({ friendIds: [f6.id], type: 'activity', duration: '2hr', quality: 8, note: '健身房', date: d(5) })
+    addHangout({ friendIds: [f6.id], type: 'activity', duration: '2hr', quality: 8, note: '跑步', date: d(12) })
+    addHangout({ friendIds: [f6.id], type: 'meal', duration: '1hr', quality: 7, note: '健身后吃饭', date: d(18) })
+    addHangout({ friendIds: [f6.id], type: 'call', duration: '30min', quality: 6, note: '训练计划', date: d(30) })
+    addHangout({ friendIds: [f6.id], type: 'activity', duration: 'fullday', quality: 10, note: '马拉松', date: d(60) })
 
-    // 赵敏 — 英语角朋友，聊天开心但频率低
-    addHangout({ friendIds: [f7.id], type: 'hangout', duration: '2hr', quality: 4, note: '英语角', date: d(7) })
-    addHangout({ friendIds: [f7.id], type: 'call', duration: '30min', quality: 4, note: '练习口语', date: d(45) })
-    addHangout({ friendIds: [f7.id], type: 'meal', duration: '1hr', quality: 4, note: '读书会后聚餐', date: d(80) })
+    // 赵敏 — 英语角朋友，质量高但频率低
+    addHangout({ friendIds: [f7.id], type: 'hangout', duration: '2hr', quality: 8, note: '英语角', date: d(7) })
+    addHangout({ friendIds: [f7.id], type: 'call', duration: '30min', quality: 7, note: '练习口语', date: d(45) })
+    addHangout({ friendIds: [f7.id], type: 'meal', duration: '1hr', quality: 8, note: '读书会后聚餐', date: d(80) })
 
-    // 周杰 — 游戏网友，开黑开心
-    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 4, note: '深夜开黑', date: d(2) })
-    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 3, note: '日常游戏', date: d(8) })
-    addHangout({ friendIds: [f8.id], type: 'online', duration: '3hr', quality: 4, note: '公会战', date: d(15) })
-    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 4, note: '周末开黑', date: d(25) })
+    // 周杰 — 游戏网友
+    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 8, note: '深夜开黑', date: d(2) })
+    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 7, note: '日常游戏', date: d(8) })
+    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 8, note: '公会战', date: d(15) })
+    addHangout({ friendIds: [f8.id], type: 'online', duration: '2hr', quality: 8, note: '周末开黑', date: d(25) })
 
-    // 吴芳 — 邻居，烘焙美食分享
-    addHangout({ friendIds: [f9.id], type: 'hangout', duration: '1hr', quality: 5, note: '分享自制蛋糕', date: d(10) })
-    addHangout({ friendIds: [f9.id], type: 'meal', duration: '1hr', quality: 4, note: '邻里聚餐', date: d(50) })
-    addHangout({ friendIds: [f9.id], type: 'call', duration: '30min', quality: 4, note: '烘焙配方交流', date: d(90) })
+    // 吴芳 — 邻居，烘焙美食
+    addHangout({ friendIds: [f9.id], type: 'hangout', duration: '1hr', quality: 9, note: '分享自制蛋糕', date: d(10) })
+    addHangout({ friendIds: [f9.id], type: 'meal', duration: '1hr', quality: 8, note: '邻里聚餐', date: d(50) })
+    addHangout({ friendIds: [f9.id], type: 'call', duration: '30min', quality: 8, note: '烘焙配方交流', date: d(90) })
 
-    // 郑凯 — 技术顾问，代码审查
-    addHangout({ friendIds: [f10.id], type: 'call', duration: '1hr', quality: 4, note: '代码review', date: d(6) })
-    addHangout({ friendIds: [f10.id], type: 'call', duration: '1hr', quality: 4, note: '技术方案讨论', date: d(20) })
-    addHangout({ friendIds: [f10.id], type: 'online', duration: '2hr', quality: 3, note: '远程协作', date: d(45) })
-    addHangout({ friendIds: [f10.id], type: 'call', duration: '30min', quality: 4, note: '职业发展', date: d(70) })
+    // 郑凯 — 技术顾问
+    addHangout({ friendIds: [f10.id], type: 'call', duration: '1hr', quality: 7, note: '代码review', date: d(6) })
+    addHangout({ friendIds: [f10.id], type: 'call', duration: '1hr', quality: 8, note: '技术方案讨论', date: d(20) })
+    addHangout({ friendIds: [f10.id], type: 'online', duration: '2hr', quality: 6, note: '远程协作', date: d(45) })
+    addHangout({ friendIds: [f10.id], type: 'call', duration: '30min', quality: 7, note: '职业发展', date: d(70) })
 
-    // 孙晓 — 读书会，书友深度交流
-    addHangout({ friendIds: [f11.id], type: 'hangout', duration: '2hr', quality: 5, note: '读书会讨论', date: d(14) })
-    addHangout({ friendIds: [f11.id], type: 'meal', duration: '1hr', quality: 4, note: '读书会后聚餐', date: d(15) })
-    addHangout({ friendIds: [f11.id], type: 'call', duration: '1hr', quality: 5, note: '书籍深入讨论', date: d(60) })
-    addHangout({ friendIds: [f11.id], type: 'hangout', duration: '2hr', quality: 5, note: '读书会', date: d(75) })
+    // 孙晓 — 读书会，深度交流
+    addHangout({ friendIds: [f11.id], type: 'hangout', duration: '2hr', quality: 10, note: '读书会讨论', date: d(14) })
+    addHangout({ friendIds: [f11.id], type: 'meal', duration: '1hr', quality: 8, note: '读书会后聚餐', date: d(15) })
+    addHangout({ friendIds: [f11.id], type: 'call', duration: '1hr', quality: 9, note: '书籍深入讨论', date: d(60) })
+    addHangout({ friendIds: [f11.id], type: 'hangout', duration: '2hr', quality: 9, note: '读书会', date: d(75) })
 
-    // 黄磊 — 爬山搭档，户外
-    addHangout({ friendIds: [f12.id], type: 'activity', duration: 'fullday', quality: 5, note: '爬山', date: d(30) })
-    addHangout({ friendIds: [f12.id], type: 'trip', duration: 'trip', quality: 5, note: '泰山登顶', date: d(180) })
-    addHangout({ friendIds: [f12.id], type: 'call', duration: '30min', quality: 4, note: '路线规划', date: d(200) })
+    // 黄磊 — 爬山搭档
+    addHangout({ friendIds: [f12.id], type: 'activity', duration: 'fullday', quality: 10, note: '爬山', date: d(30) })
+    addHangout({ friendIds: [f12.id], type: 'trip', duration: 'trip', quality: 10, note: '泰山登顶', date: d(180) })
+    addHangout({ friendIds: [f12.id], type: 'call', duration: '30min', quality: 7, note: '路线规划', date: d(200) })
 
     // 林青 — 音乐知己
-    addHangout({ friendIds: [f13.id], type: 'hangout', duration: '2hr', quality: 5, note: '音乐会', date: d(40) })
-    addHangout({ friendIds: [f13.id], type: 'call', duration: '1hr', quality: 5, note: '音乐分享', date: d(100) })
-    addHangout({ friendIds: [f13.id], type: 'activity', duration: '2hr', quality: 4, note: 'KTV', date: d(150) })
+    addHangout({ friendIds: [f13.id], type: 'hangout', duration: '2hr', quality: 9, note: '音乐会', date: d(40) })
+    addHangout({ friendIds: [f13.id], type: 'call', duration: '1hr', quality: 9, note: '音乐分享', date: d(100) })
+    addHangout({ friendIds: [f13.id], type: 'activity', duration: '2hr', quality: 8, note: 'KTV', date: d(150) })
 
     // 杨帆 — 创业导师
-    addHangout({ friendIds: [f14.id], type: 'call', duration: '1hr', quality: 4, note: '商业模式讨论', date: d(20) })
-    addHangout({ friendIds: [f14.id], type: 'call', duration: '1hr', quality: 4, note: '项目复盘', date: d(50) })
-    addHangout({ friendIds: [f14.id], type: 'meal', duration: '2hr', quality: 5, note: '融资庆祝', date: d(90) })
-    addHangout({ friendIds: [f14.id], type: 'call', duration: '30min', quality: 3, note: '日常咨询', date: d(120) })
+    addHangout({ friendIds: [f14.id], type: 'call', duration: '1hr', quality: 7, note: '商业模式讨论', date: d(20) })
+    addHangout({ friendIds: [f14.id], type: 'call', duration: '1hr', quality: 8, note: '项目复盘', date: d(50) })
+    addHangout({ friendIds: [f14.id], type: 'meal', duration: '2hr', quality: 9, note: '融资庆祝', date: d(90) })
+    addHangout({ friendIds: [f14.id], type: 'call', duration: '30min', quality: 5, note: '日常咨询', date: d(120) })
 
     // 周婷 — 瑜伽伙伴
-    addHangout({ friendIds: [f15.id], type: 'activity', duration: '1hr', quality: 4, note: '瑜伽课', date: d(7) })
-    addHangout({ friendIds: [f15.id], type: 'activity', duration: '1hr', quality: 4, note: '瑜伽课', date: d(21) })
-    addHangout({ friendIds: [f15.id], type: 'meal', duration: '1hr', quality: 4, note: '课后咖啡', date: d(22) })
-    addHangout({ friendIds: [f15.id], type: 'call', duration: '30min', quality: 3, note: '健康讨论', date: d(60) })
+    addHangout({ friendIds: [f15.id], type: 'activity', duration: '1hr', quality: 7, note: '瑜伽课', date: d(7) })
+    addHangout({ friendIds: [f15.id], type: 'activity', duration: '1hr', quality: 7, note: '瑜伽课', date: d(21) })
+    addHangout({ friendIds: [f15.id], type: 'meal', duration: '1hr', quality: 8, note: '课后咖啡', date: d(22) })
+    addHangout({ friendIds: [f15.id], type: 'call', duration: '30min', quality: 6, note: '健康讨论', date: d(60) })
 
     // 吴浩 — 足球搭档
-    addHangout({ friendIds: [f16.id], type: 'activity', duration: '2hr', quality: 4, note: '足球', date: d(10) })
-    addHangout({ friendIds: [f16.id], type: 'call', duration: '30min', quality: 4, note: '球赛讨论', date: d(30) })
-    addHangout({ friendIds: [f16.id], type: 'activity', duration: '2hr', quality: 4, note: '足球', date: d(55) })
-    addHangout({ friendIds: [f16.id], type: 'meal', duration: '1hr', quality: 3, note: '看球吃饭', date: d(90) })
+    addHangout({ friendIds: [f16.id], type: 'activity', duration: '2hr', quality: 8, note: '足球', date: d(10) })
+    addHangout({ friendIds: [f16.id], type: 'call', duration: '30min', quality: 7, note: '球赛讨论', date: d(30) })
+    addHangout({ friendIds: [f16.id], type: 'activity', duration: '2hr', quality: 7, note: '足球', date: d(55) })
+    addHangout({ friendIds: [f16.id], type: 'meal', duration: '1hr', quality: 6, note: '看球吃饭', date: d(90) })
 
-    // 徐佳 — 前同事，闺蜜
-    addHangout({ friendIds: [f17.id], type: 'meal', duration: '2hr', quality: 5, note: '闺蜜约会', date: d(12) })
-    addHangout({ friendIds: [f17.id], type: 'call', duration: '1hr', quality: 5, note: '深度聊天', date: d(25) })
-    addHangout({ friendIds: [f17.id], type: 'hangout', duration: '2hr', quality: 4, note: '逛街', date: d(55) })
-    addHangout({ friendIds: [f17.id], type: 'call', duration: '30min', quality: 4, note: '日常倾诉', date: d(80) })
+    // 徐佳 — 闺蜜
+    addHangout({ friendIds: [f17.id], type: 'meal', duration: '2hr', quality: 10, note: '闺蜜约会', date: d(12) })
+    addHangout({ friendIds: [f17.id], type: 'call', duration: '1hr', quality: 9, note: '深度聊天', date: d(25) })
+    addHangout({ friendIds: [f17.id], type: 'hangout', duration: '2hr', quality: 9, note: '逛街', date: d(55) })
+    addHangout({ friendIds: [f17.id], type: 'call', duration: '30min', quality: 8, note: '日常倾诉', date: d(80) })
 
     // 马超 — 骑行搭档
-    addHangout({ friendIds: [f18.id], type: 'activity', duration: 'fullday', quality: 5, note: '环湖骑行', date: d(45) })
-    addHangout({ friendIds: [f18.id], type: 'trip', duration: 'trip', quality: 5, note: '青海湖骑行', date: d(200) })
-    addHangout({ friendIds: [f18.id], type: 'call', duration: '30min', quality: 4, note: '骑行计划', date: d(250) })
+    addHangout({ friendIds: [f18.id], type: 'activity', duration: 'fullday', quality: 10, note: '环湖骑行', date: d(45) })
+    addHangout({ friendIds: [f18.id], type: 'trip', duration: 'trip', quality: 10, note: '青海湖骑行', date: d(200) })
+    addHangout({ friendIds: [f18.id], type: 'call', duration: '30min', quality: 7, note: '骑行计划', date: d(250) })
 
     // 胡丽 — 舞蹈搭档
-    addHangout({ friendIds: [f19.id], type: 'activity', duration: '2hr', quality: 4, note: '舞蹈排练', date: d(18) })
-    addHangout({ friendIds: [f19.id], type: 'hangout', duration: '2hr', quality: 5, note: '年会表演', date: d(70) })
-    addHangout({ friendIds: [f19.id], type: 'meal', duration: '1hr', quality: 4, note: '排练后吃饭', date: d(71) })
+    addHangout({ friendIds: [f19.id], type: 'activity', duration: '2hr', quality: 7, note: '舞蹈排练', date: d(18) })
+    addHangout({ friendIds: [f19.id], type: 'hangout', duration: '2hr', quality: 9, note: '年会表演', date: d(70) })
+    addHangout({ friendIds: [f19.id], type: 'meal', duration: '1hr', quality: 7, note: '排练后吃饭', date: d(71) })
 
-    // 高峰 — 家人，传统节日
-    addHangout({ friendIds: [f20.id], type: 'hangout', duration: 'fullday', quality: 5, note: '春节团聚', date: d(60) })
-    addHangout({ friendIds: [f20.id], type: 'meal', duration: '2hr', quality: 5, note: '中秋节家宴', date: d(200) })
-    addHangout({ friendIds: [f20.id], type: 'trip', duration: 'fullday', quality: 5, note: '家族旅行', date: d(300) })
+    // 高峰 — 家人
+    addHangout({ friendIds: [f20.id], type: 'hangout', duration: 'fullday', quality: 10, note: '春节团聚', date: d(60) })
+    addHangout({ friendIds: [f20.id], type: 'meal', duration: '2hr', quality: 9, note: '中秋节家宴', date: d(200) })
+    addHangout({ friendIds: [f20.id], type: 'trip', duration: 'fullday', quality: 10, note: '家族旅行', date: d(300) })
 
-    localStorage.setItem(SEED_KEY, '1')
+    // 钱总 — 上司，频繁应酬，质量很低（典型 negative gap）
+    addHangout({ friendIds: [f21.id], type: 'meal', duration: '2hr', quality: 2, note: '部门饭局', date: d(2) })
+    addHangout({ friendIds: [f21.id], type: 'meal', duration: '2hr', quality: 3, note: '客户应酬', date: d(7) })
+    addHangout({ friendIds: [f21.id], type: 'hangout', duration: '2hr', quality: 1, note: '加班后被叫去喝酒', date: d(11) })
+    addHangout({ friendIds: [f21.id], type: 'meal', duration: '2hr', quality: 2, note: '商务晚餐', date: d(18) })
+    addHangout({ friendIds: [f21.id], type: 'call', duration: '30min', quality: 3, note: '工作汇报', date: d(22) })
+    addHangout({ friendIds: [f21.id], type: 'meal', duration: '2hr', quality: 2, note: '团队聚餐', date: d(28) })
+    addHangout({ friendIds: [f21.id], type: 'meal', duration: '1hr', quality: 4, note: '工作午餐', date: d(40) })
+    addHangout({ friendIds: [f21.id], type: 'hangout', duration: '2hr', quality: 2, note: '年会应酬', date: d(55) })
+
+    // 老周叔 — 远亲，经常拜访但聊不来
+    addHangout({ friendIds: [f22.id], type: 'meal', duration: '2hr', quality: 3, note: '家里吃饭', date: d(10) })
+    addHangout({ friendIds: [f22.id], type: 'hangout', duration: '2hr', quality: 2, note: '下午来串门', date: d(25) })
+    addHangout({ friendIds: [f22.id], type: 'meal', duration: '2hr', quality: 3, note: '请吃饭推不掉', date: d(50) })
+    addHangout({ friendIds: [f22.id], type: 'call', duration: '30min', quality: 2, note: '催相亲', date: d(70) })
+    addHangout({ friendIds: [f22.id], type: 'meal', duration: '2hr', quality: 3, note: '家庭聚餐', date: d(95) })
+
+    // 阿强 — 老同学，动不动就来抱怨
+    addHangout({ friendIds: [f23.id], type: 'call', duration: '1hr', quality: 3, note: '又来诉苦', date: d(5) })
+    addHangout({ friendIds: [f23.id], type: 'meal', duration: '2hr', quality: 4, note: '老地方吃饭', date: d(20) })
+    addHangout({ friendIds: [f23.id], type: 'call', duration: '1hr', quality: 2, note: '深夜借钱电话', date: d(35) })
+    addHangout({ friendIds: [f23.id], type: 'hangout', duration: '2hr', quality: 3, note: '老同学聚会', date: d(60) })
+
+    localStorage.setItem(SEED_KEY, SEED_VERSION)
   }
 
   return { seedIfEmpty }

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useFriends } from '../composables/useFriends'
 import { useScoring } from '../composables/useScoring'
@@ -16,7 +16,6 @@ function maybeOpenEditFromQuery() {
   if (!id) return
   const target = getFriendById(id)
   if (target) openEdit(target)
-  // Clear the query so reloading the page doesn't reopen the form.
   router.replace({ path: route.path })
 }
 
@@ -27,7 +26,6 @@ const showAdd = ref(false)
 const showEdit = ref(false)
 const editingFriend = ref(null)
 
-// Form fields
 const newName = ref('')
 const newTags = ref('')
 const newPhone = ref('')
@@ -54,27 +52,16 @@ function openEdit(friend) {
 function handleAdd() {
   const name = newName.value.trim()
   if (!name) return
-  const tags = newTags.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-  const importantEvents = newImportantEvents.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-  const values = newValues.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
+  const tags = newTags.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+  const importantEvents = newImportantEvents.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+  const values = newValues.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
   addFriend({
-    name,
-    tags,
+    name, tags,
     phone: newPhone.value.trim(),
     birthday: newBirthday.value,
     location: newLocation.value.trim(),
     howWeMet: newHowWeMet.value.trim(),
-    importantEvents,
-    values,
+    importantEvents, values,
   })
   resetForm()
 }
@@ -83,27 +70,16 @@ function handleEdit() {
   if (!editingFriend.value) return
   const name = newName.value.trim()
   if (!name) return
-  const tags = newTags.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-  const importantEvents = newImportantEvents.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
-  const values = newValues.value
-    .split(/[,，]/)
-    .map((t) => t.trim())
-    .filter(Boolean)
+  const tags = newTags.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+  const importantEvents = newImportantEvents.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
+  const values = newValues.value.split(/[,，]/).map((t) => t.trim()).filter(Boolean)
   updateFriend(editingFriend.value.id, {
-    name,
-    tags,
+    name, tags,
     phone: newPhone.value.trim(),
     birthday: newBirthday.value,
     location: newLocation.value.trim(),
     howWeMet: newHowWeMet.value.trim(),
-    importantEvents,
-    values,
+    importantEvents, values,
   })
   resetForm()
 }
@@ -142,167 +118,143 @@ function handleDelete(friend) {
     deleteFriend(friend.id)
   }
 }
+
+function gapTone(gap) {
+  if (gap > gapThreshold.value) return 'text-emerald-600'
+  if (gap < -gapThreshold.value) return 'text-rose-500'
+  return 'text-stone-400'
+}
 </script>
 
 <template>
-  <div class="px-4 pt-6 pb-6">
-    <div class="flex items-center justify-between mb-5">
-      <h1 class="text-xl font-bold text-gray-800">朋友们</h1>
+  <div class="px-5 pt-9 pb-2">
+    <!-- Header -->
+    <div class="flex items-end justify-between mb-9">
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">Friends</p>
+        <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">朋友们</h1>
+      </div>
       <button
         @click="toggleAdd"
-        class="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg border-none cursor-pointer"
+        class="px-3.5 py-1.5 text-[13px] font-medium border-none cursor-pointer transition-colors rounded-full"
+        :class="showAdd ? 'bg-stone-100 text-stone-600' : 'bg-stone-900 text-white'"
       >
         {{ showAdd ? '取消' : '+ 添加' }}
       </button>
     </div>
 
-    <!-- Add friend form -->
-    <div v-if="showAdd" class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
+    <!-- Add / Edit form -->
+    <div
+      v-if="showAdd || showEdit"
+      class="mb-7 rounded-xl p-4 space-y-2.5"
+      style="border: 1px solid #ece9e4; background: #fbfaf7"
+    >
+      <p v-if="showEdit" class="text-[11px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-1">
+        编辑 · {{ editingFriend?.name }}
+      </p>
       <input
         v-model="newName"
         placeholder="名字 *"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-        @keyup.enter="handleAdd"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none transition-colors"
+        style="border: 1px solid #ece9e4"
+        onfocus="this.style.borderColor='#1c1917'"
+        onblur="this.style.borderColor='#ece9e4'"
+        @keyup.enter="showEdit ? handleEdit() : handleAdd()"
       />
       <input
         v-model="newTags"
         placeholder="标签（逗号分隔，如：大学, 球友）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
       <div class="grid grid-cols-2 gap-2">
         <input
           v-model="newPhone"
           placeholder="电话"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+          class="bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+          style="border: 1px solid #ece9e4"
         />
         <input
           v-model="newBirthday"
           type="date"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+          class="bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 outline-none"
+          style="border: 1px solid #ece9e4"
         />
       </div>
       <input
         v-model="newLocation"
         placeholder="所在地"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newHowWeMet"
         placeholder="怎么认识的"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newImportantEvents"
         placeholder="重要事件（逗号分隔）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newValues"
-        placeholder="价值（如：篮球搭档, 倾听者，逗号分隔）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+        placeholder="价值（如：篮球搭档, 倾听者）"
+        class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
+        style="border: 1px solid #ece9e4"
       />
-      <button
-        @click="handleAdd"
-        class="w-full py-2 bg-blue-500 text-white text-sm rounded-lg border-none cursor-pointer"
-      >
-        保存朋友
-      </button>
-    </div>
-
-    <!-- Edit friend form -->
-    <div v-if="showEdit" class="bg-gray-50 rounded-xl p-4 mb-4 space-y-3">
-      <p class="text-sm font-semibold text-gray-700 mb-1">编辑 {{ editingFriend?.name }}</p>
-      <input
-        v-model="newName"
-        placeholder="名字 *"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-        @keyup.enter="handleEdit"
-      />
-      <input
-        v-model="newTags"
-        placeholder="标签（逗号分隔）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-      />
-      <div class="grid grid-cols-2 gap-2">
-        <input
-          v-model="newPhone"
-          placeholder="电话"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-        />
-        <input
-          v-model="newBirthday"
-          type="date"
-          class="border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-        />
-      </div>
-      <input
-        v-model="newLocation"
-        placeholder="所在地"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-      />
-      <input
-        v-model="newHowWeMet"
-        placeholder="怎么认识的"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-      />
-      <input
-        v-model="newImportantEvents"
-        placeholder="重要事件（逗号分隔）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-      />
-      <input
-        v-model="newValues"
-        placeholder="价值（如：篮球搭档, 倾听者，逗号分隔）"
-        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-      />
-      <div class="flex gap-2">
+      <div v-if="showEdit" class="flex gap-2 pt-1">
         <button
           @click="handleEdit"
-          class="flex-1 py-2 bg-blue-500 text-white text-sm rounded-lg border-none cursor-pointer"
-        >
-          保存修改
-        </button>
+          class="flex-1 py-2.5 bg-stone-900 text-white text-[14px] font-medium rounded-lg border-none cursor-pointer"
+        >保存修改</button>
         <button
-          @click="showEdit = false; editingFriend = null"
-          class="px-4 py-2 bg-gray-200 text-gray-600 text-sm rounded-lg border-none cursor-pointer"
-        >
-          取消
-        </button>
+          @click="resetForm"
+          class="px-5 py-2.5 bg-stone-100 text-stone-600 text-[14px] rounded-lg border-none cursor-pointer"
+        >取消</button>
       </div>
+      <button
+        v-else
+        @click="handleAdd"
+        class="w-full py-2.5 bg-stone-900 text-white text-[14px] font-medium rounded-lg border-none cursor-pointer mt-1"
+      >保存朋友</button>
+    </div>
+
+    <!-- Empty -->
+    <div v-if="friends.length === 0" class="text-center text-stone-400 py-16 text-[13.5px]">
+      还没有朋友<br />
+      <span class="text-[12px] mt-1 inline-block">点击右上角 + 添加 开始</span>
     </div>
 
     <!-- Friend list -->
-    <div v-if="friends.length === 0" class="text-center text-gray-400 py-16 text-sm">
-      还没有朋友<br />点击上方 + 添加 开始
-    </div>
-
-    <div v-else class="space-y-2">
+    <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
       <div
-        v-for="s in scoredFriends"
+        v-for="(s, i) in scoredFriends"
         :key="s.friend.id"
-        class="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-3 cursor-pointer active:bg-gray-100 transition-colors"
+        class="flex items-center justify-between px-4 py-3.5 cursor-pointer active:bg-stone-50 transition-colors"
+        :class="i > 0 ? 'border-t' : ''"
+        :style="i > 0 ? 'border-color: #ece9e4' : ''"
         @click="router.push(`/friends/${s.friend.id}`)"
       >
-        <div>
-          <p class="text-sm font-medium text-gray-700">{{ s.friend.name }}</p>
-          <p v-if="s.friend.tags.length" class="text-xs text-gray-400 mt-0.5">
+        <div class="min-w-0 flex-1">
+          <p class="text-[14px] font-medium text-stone-900 truncate">{{ s.friend.name }}</p>
+          <p v-if="s.friend.tags.length" class="text-[11.5px] text-stone-400 mt-0.5 truncate">
             {{ s.friend.tags.join(' · ') }}
           </p>
         </div>
-        <div class="flex items-center gap-3">
-          <span
-            class="text-xs font-medium"
-            :class="s.gap > gapThreshold ? 'text-green-500' : s.gap < -gapThreshold ? 'text-red-500' : 'text-blue-500'"
-          >
+        <div class="flex items-center gap-2.5 ml-3">
+          <span class="text-[12px] font-medium tabular-nums" :class="gapTone(s.gap)">
             {{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}
           </span>
           <button
             @click.stop="openEdit(s.friend)"
-            class="px-2.5 py-1.5 text-xs text-blue-600 bg-blue-50 active:bg-blue-100 rounded-lg border-none cursor-pointer touch-manipulation"
+            class="px-2 py-1 text-[11.5px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded-md border-none cursor-pointer touch-manipulation"
           >编辑</button>
           <button
             @click.stop="handleDelete(s.friend)"
-            class="px-2.5 py-1.5 text-xs text-red-500 bg-red-50 active:bg-red-100 rounded-lg border-none cursor-pointer touch-manipulation"
+            class="px-2 py-1 text-[11.5px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded-md border-none cursor-pointer touch-manipulation"
           >删除</button>
         </div>
       </div>

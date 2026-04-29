@@ -18,7 +18,7 @@
  * @property {string[]} friendIds
  * @property {'meal'|'activity'|'call'|'trip'|'hangout'|'online'|'other'} type
  * @property {'30min'|'1hr'|'2hr'|'halfday'|'fullday'|'trip'} duration
- * @property {1|2|3|4|5} quality
+ * @property {1|2|3|4|5|6|7|8|9|10} quality
  * @property {string} note
  * @property {string} date - YYYY-MM-DD
  * @property {number} createdAt - timestamp

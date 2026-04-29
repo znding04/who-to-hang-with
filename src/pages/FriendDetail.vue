@@ -51,139 +51,157 @@ function gapText(gap) {
   return '平衡得很好'
 }
 
-function gapColor(gap) {
-  if (gap < -gapThreshold.value) return 'text-red-500'
-  if (gap > gapThreshold.value) return 'text-green-500'
-  return 'text-blue-500'
+function gapTone(gap) {
+  if (gap < -gapThreshold.value) return 'text-rose-500'
+  if (gap > gapThreshold.value) return 'text-emerald-600'
+  return 'text-stone-500'
 }
 
-function stars(n) {
-  return '★'.repeat(n) + '☆'.repeat(5 - n)
+function rating(n) {
+  return `${n}/10`
 }
+
+const infoRows = computed(() => {
+  if (!friend.value) return []
+  const rows = []
+  if (friend.value.phone) rows.push({ label: '电话', value: friend.value.phone })
+  if (friend.value.birthday) rows.push({ label: '生日', value: friend.value.birthday })
+  if (friend.value.location) rows.push({ label: '所在地', value: friend.value.location })
+  if (friend.value.howWeMet) rows.push({ label: '怎么认识', value: friend.value.howWeMet })
+  return rows
+})
 </script>
 
 <template>
-  <div class="px-4 pt-6 pb-6">
+  <div class="px-5 pt-9 pb-2">
     <!-- Header -->
-    <div class="flex items-center justify-between mb-5">
-      <router-link to="/friends" class="text-blue-500 text-sm no-underline">&larr; 朋友列表</router-link>
+    <div class="flex items-center justify-between mb-7">
+      <router-link to="/friends" class="text-stone-500 text-[13px] no-underline flex items-center gap-1.5">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 18 L9 12 L15 6" />
+        </svg>
+        朋友列表
+      </router-link>
       <div v-if="friend" class="flex items-center gap-2">
         <button
           @click="handleEdit"
-          class="px-3 py-1.5 text-xs text-blue-600 bg-blue-50 active:bg-blue-100 rounded-lg border-none cursor-pointer touch-manipulation"
+          class="px-2.5 py-1 text-[11.5px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded-md border-none cursor-pointer touch-manipulation"
         >编辑</button>
         <button
           @click="handleDelete"
-          class="px-3 py-1.5 text-xs text-red-500 bg-red-50 active:bg-red-100 rounded-lg border-none cursor-pointer touch-manipulation"
+          class="px-2.5 py-1 text-[11.5px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded-md border-none cursor-pointer touch-manipulation"
         >删除</button>
       </div>
     </div>
 
-    <div v-if="!friend" class="text-center text-gray-400 py-16 text-sm">
+    <div v-if="!friend" class="text-center text-stone-400 py-16 text-[13.5px]">
       找不到这位朋友
     </div>
 
     <template v-else>
-      <!-- Friend name & tags -->
-      <h1 class="text-xl font-bold text-gray-800 mb-1">{{ friend.name }}</h1>
-      <div v-if="friend.tags && friend.tags.length" class="flex flex-wrap gap-1.5 mb-4">
+      <!-- Name & tags -->
+      <h1 class="text-[26px] font-semibold text-stone-900 tracking-tight">{{ friend.name }}</h1>
+      <div v-if="friend.tags && friend.tags.length" class="flex flex-wrap gap-1.5 mt-2 mb-7">
         <span
           v-for="tag in friend.tags" :key="tag"
-          class="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full"
+          class="px-2.5 py-0.5 bg-stone-100 text-stone-600 text-[11.5px] rounded-full"
         >{{ tag }}</span>
       </div>
+      <div v-else class="mb-7"></div>
 
-      <!-- Basic info section -->
-      <div v-if="friend.phone || friend.birthday || friend.location || friend.howWeMet"
-        class="bg-gray-50 rounded-xl p-4 mb-4 space-y-2">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">基本信息</h2>
-        <div v-if="friend.phone" class="flex items-center gap-2 text-sm">
-          <span class="text-gray-400">📱</span>
-          <span class="text-gray-600">{{ friend.phone }}</span>
-        </div>
-        <div v-if="friend.birthday" class="flex items-center gap-2 text-sm">
-          <span class="text-gray-400">🎂</span>
-          <span class="text-gray-600">{{ friend.birthday }}</span>
-        </div>
-        <div v-if="friend.location" class="flex items-center gap-2 text-sm">
-          <span class="text-gray-400">📍</span>
-          <span class="text-gray-600">{{ friend.location }}</span>
-        </div>
-        <div v-if="friend.howWeMet" class="flex items-center gap-2 text-sm">
-          <span class="text-gray-400">🤝</span>
-          <span class="text-gray-600">{{ friend.howWeMet }}</span>
+      <!-- Gap indicator -->
+      <div v-if="friendScore" class="mb-9 pb-7 border-b" style="border-color: #ece9e4">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-2">差值 · 感受 − 频率</p>
+        <p class="text-[40px] font-light tabular-nums tracking-tight" :class="gapTone(friendScore.gap)">
+          {{ friendScore.gap > 0 ? '+' : '' }}{{ Math.round(friendScore.gap) }}
+        </p>
+        <p class="text-[13px] text-stone-500 mt-1">{{ gapText(friendScore.gap) }}</p>
+      </div>
+
+      <!-- Basic info -->
+      <div v-if="infoRows.length" class="mb-9">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">基本信息</p>
+        <div class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+          <div
+            v-for="(row, i) in infoRows" :key="row.label"
+            class="flex items-center justify-between px-4 py-3"
+            :class="i > 0 ? 'border-t' : ''"
+            :style="i > 0 ? 'border-color: #ece9e4' : ''"
+          >
+            <span class="text-[12.5px] text-stone-400">{{ row.label }}</span>
+            <span class="text-[13.5px] text-stone-800 text-right">{{ row.value }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- Values section -->
-      <div v-if="friend.values && friend.values.length"
-        class="bg-gray-50 rounded-xl p-4 mb-4">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">TA 的价值</h2>
-        <div class="flex flex-wrap gap-2">
+      <!-- Values -->
+      <div v-if="friend.values && friend.values.length" class="mb-9">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">TA 的价值</p>
+        <div class="flex flex-wrap gap-1.5">
           <span
             v-for="val in friend.values" :key="val"
-            class="px-3 py-1 bg-green-50 text-green-600 text-xs rounded-full"
+            class="px-3 py-1 text-[12px] rounded-full"
+            style="background: #fef3c7; color: #92400e"
           >{{ val }}</span>
         </div>
       </div>
 
-      <!-- Important events section -->
-      <div v-if="friend.importantEvents && friend.importantEvents.length"
-        class="bg-gray-50 rounded-xl p-4 mb-4">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">重要时刻</h2>
-        <div class="space-y-1.5">
-          <div v-for="(event, i) in friend.importantEvents" :key="i" class="flex items-center gap-2 text-sm">
-            <span class="text-gray-400">✨</span>
-            <span class="text-gray-600">{{ event }}</span>
+      <!-- Important events -->
+      <div v-if="friend.importantEvents && friend.importantEvents.length" class="mb-9">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">重要时刻</p>
+        <div class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+          <div
+            v-for="(event, i) in friend.importantEvents" :key="i"
+            class="flex items-start gap-3 px-4 py-3"
+            :class="i > 0 ? 'border-t' : ''"
+            :style="i > 0 ? 'border-color: #ece9e4' : ''"
+          >
+            <span class="w-1 h-1 rounded-full bg-stone-400 mt-2 flex-shrink-0"></span>
+            <span class="text-[13.5px] text-stone-700 leading-relaxed">{{ event }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Gap indicator -->
-      <div v-if="friendScore" class="bg-gray-50 rounded-xl p-4 mb-4 text-center">
-        <p class="text-xs text-gray-400 mb-1">差值 (感受 − 频率)</p>
-        <p class="text-3xl font-bold" :class="gapColor(friendScore.gap)">
-          {{ friendScore.gap > 0 ? '+' : '' }}{{ Math.round(friendScore.gap) }}
-        </p>
-        <p class="text-sm text-gray-500 mt-1">{{ gapText(friendScore.gap) }}</p>
-      </div>
-
-      <!-- Mini scatter plot -->
-      <div v-if="scoredFriends.length > 0" class="bg-gray-50 rounded-xl p-3 mb-4">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">在散点图中的位置</h2>
-        <ScatterPlot :scores="scoredFriends" :highlight-id="friendId" :show-tuner="false" />
+      <!-- Mini scatter -->
+      <div v-if="scoredFriends.length > 0" class="mb-9">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">在散点图中的位置</p>
+        <div class="rounded-xl p-3" style="border: 1px solid #ece9e4; background: #fbfaf7">
+          <ScatterPlot :scores="scoredFriends" :highlight-id="friendId" :show-tuner="false" />
+        </div>
       </div>
 
       <!-- Hangout history -->
-      <div class="mb-4">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">聚会记录</h2>
-        <div v-if="friendHangouts.length === 0" class="text-center text-gray-400 py-6 text-sm">
+      <div class="mb-7">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">聚会记录</p>
+        <div v-if="friendHangouts.length === 0" class="text-center text-stone-400 py-6 text-[13px]">
           还没有聚会记录
         </div>
-        <div v-else class="space-y-2">
+        <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
           <div
-            v-for="h in friendHangouts" :key="h.id"
-            class="bg-gray-50 rounded-xl px-4 py-3"
+            v-for="(h, i) in friendHangouts" :key="h.id"
+            class="px-4 py-3"
+            :class="i > 0 ? 'border-t' : ''"
+            :style="i > 0 ? 'border-color: #ece9e4' : ''"
           >
             <div class="flex items-center justify-between mb-1">
-              <span class="text-sm font-medium text-gray-700">
-                {{ typeMap[h.type]?.icon || '📦' }} {{ typeMap[h.type]?.label || h.type }}
+              <span class="text-[13.5px] font-medium text-stone-800">
+                {{ typeMap[h.type]?.icon || '' }} {{ typeMap[h.type]?.label || h.type }}
               </span>
-              <span class="text-xs text-gray-400">{{ h.date }}</span>
+              <span class="text-[11.5px] text-stone-400 tabular-nums">{{ h.date }}</span>
             </div>
             <div class="flex items-center justify-between">
-              <span class="text-xs text-gray-400">{{ h.duration }}</span>
-              <span class="text-xs text-amber-500">{{ stars(h.quality) }}</span>
+              <span class="text-[11.5px] text-stone-400">{{ h.duration }}</span>
+              <span class="text-[11.5px] text-amber-500 font-medium tabular-nums">★ {{ rating(h.quality) }}</span>
             </div>
-            <p v-if="h.note" class="text-xs text-gray-500 mt-1">{{ h.note }}</p>
+            <p v-if="h.note" class="text-[12.5px] text-stone-500 mt-1.5 leading-relaxed">{{ h.note }}</p>
           </div>
         </div>
       </div>
 
-      <!-- Log hangout button -->
+      <!-- Log button -->
       <router-link
         :to="`/log?friend=${friend.id}`"
-        class="block w-full py-3 bg-blue-500 text-white text-center font-semibold text-base rounded-xl no-underline"
+        class="block w-full py-3 bg-stone-900 text-white text-center font-medium text-[15px] rounded-xl no-underline active:bg-stone-800"
       >
         记录聚会
       </router-link>

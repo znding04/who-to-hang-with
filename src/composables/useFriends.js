@@ -2,6 +2,8 @@ import { ref, watch } from 'vue'
 
 const FRIENDS_KEY = 'wtpw_friends'
 const HANGOUTS_KEY = 'wtpw_hangouts'
+const SCHEMA_VERSION_KEY = 'wtpw_schema_version'
+const CURRENT_SCHEMA = 2
 
 function load(key) {
   try {
@@ -11,6 +13,22 @@ function load(key) {
     return []
   }
 }
+
+// One-time migration: schema v1 used 1-5 ratings; v2 uses 1-10. Double existing values.
+function migrate() {
+  const stored = Number(localStorage.getItem(SCHEMA_VERSION_KEY) || 0)
+  if (stored >= CURRENT_SCHEMA) return
+  if (stored < 2) {
+    const list = load(HANGOUTS_KEY)
+    if (list.length > 0) {
+      const upgraded = list.map((h) => (h.quality <= 5 ? { ...h, quality: h.quality * 2 } : h))
+      localStorage.setItem(HANGOUTS_KEY, JSON.stringify(upgraded))
+    }
+  }
+  localStorage.setItem(SCHEMA_VERSION_KEY, String(CURRENT_SCHEMA))
+}
+
+migrate()
 
 // Singleton reactive state
 const friends = ref(load(FRIENDS_KEY))

@@ -12,7 +12,6 @@ const { scoredFriends } = useScoring()
 const { gapThreshold } = useGapThreshold()
 const { customTypes } = useCustomTypes()
 
-// Section 2: Rankings
 const mostRewarding = computed(() =>
   [...scoredFriends.value].sort((a, b) => b.gap - a.gap).slice(0, 5)
 )
@@ -34,7 +33,6 @@ const longTimeNoSee = computed(() => {
     .sort((a, b) => b.gap - a.gap)
 })
 
-// Section 3: Overall stats
 const totalHangouts = computed(() => hangouts.value.length)
 
 const avgQuality = computed(() => {
@@ -63,102 +61,124 @@ const mostFrequentFriend = computed(() => {
   return friend ? friend.name : null
 })
 
-function gapColor(gap) {
-  if (gap > gapThreshold.value) return 'text-green-600'
-  if (gap < -gapThreshold.value) return 'text-red-500'
-  return 'text-blue-500'
+function gapTone(gap) {
+  if (gap > gapThreshold.value) return 'text-emerald-600'
+  if (gap < -gapThreshold.value) return 'text-rose-500'
+  return 'text-stone-400'
 }
 </script>
 
 <template>
-  <div class="px-4 pt-6 pb-6">
-    <h1 class="text-xl font-bold text-gray-800 mb-1">统计</h1>
-    <p class="text-sm text-gray-400 mb-6">Stats</p>
+  <div class="px-5 pt-9 pb-2">
+    <!-- Header -->
+    <div class="mb-9">
+      <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">Stats</p>
+      <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">统计</h1>
+    </div>
 
-    <div v-if="friends.length === 0" class="text-center text-gray-400 py-16 text-sm">
+    <div v-if="friends.length === 0" class="text-center text-stone-400 py-16 text-[13.5px]">
       添加朋友和记录聚会后这里会显示统计
     </div>
 
     <template v-else>
-      <!-- Section 1: Global Scatter Plot -->
-      <section class="mb-6">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">友谊散点图</h2>
-        <div class="bg-gray-50 rounded-xl p-3">
+      <!-- Scatter -->
+      <section class="mb-9">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">友谊散点图</p>
+        <div class="rounded-xl p-3" style="border: 1px solid #ece9e4; background: #fbfaf7">
           <ScatterPlot :scores="scoredFriends" />
         </div>
-        <p class="text-xs text-gray-400 mt-2 text-center">
-          <span class="text-green-500">●</span> 很值得
-          <span class="ml-2 text-red-500">●</span> 不平衡
-          <span class="ml-2 text-blue-500">●</span> 平衡
-        </p>
-      </section>
-
-      <!-- Section 2: Friend Rankings -->
-      <section class="mb-6 space-y-4">
-        <!-- Most Rewarding -->
-        <div>
-          <h2 class="text-sm font-semibold text-gray-600 mb-2">💎 最值得</h2>
-          <div v-if="mostRewarding.length === 0" class="text-xs text-gray-400">暂无数据</div>
-          <div
-            v-for="s in mostRewarding"
-            :key="s.friend.id"
-            class="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg mb-1"
-          >
-            <span class="text-sm text-gray-700">{{ s.friend.name }}</span>
-            <span class="text-sm font-medium" :class="gapColor(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
-          </div>
-        </div>
-
-        <!-- Needs Attention -->
-        <div>
-          <h2 class="text-sm font-semibold text-gray-600 mb-2">⚠️ 需要关注</h2>
-          <div v-if="needsAttention.length === 0" class="text-xs text-gray-400">暂无数据</div>
-          <div
-            v-for="s in needsAttention"
-            :key="s.friend.id"
-            class="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg mb-1"
-          >
-            <span class="text-sm text-gray-700">{{ s.friend.name }}</span>
-            <span class="text-sm font-medium" :class="gapColor(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
-          </div>
-        </div>
-
-        <!-- Long Time No See -->
-        <div>
-          <h2 class="text-sm font-semibold text-gray-600 mb-2">👋 好久不见</h2>
-          <div v-if="longTimeNoSee.length === 0" class="text-xs text-gray-400">最近都有联系，很棒！</div>
-          <div
-            v-for="s in longTimeNoSee"
-            :key="s.friend.id"
-            class="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg mb-1"
-          >
-            <span class="text-sm text-gray-700">{{ s.friend.name }}</span>
-            <span class="text-sm font-medium" :class="gapColor(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
-          </div>
+        <div class="flex justify-center gap-5 text-[11px] text-stone-500 mt-3">
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>很值得</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>不平衡</span>
+          <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-stone-400"></span>平衡</span>
         </div>
       </section>
 
-      <!-- Section 3: Overall Stats -->
-      <section class="mb-4">
-        <h2 class="text-sm font-semibold text-gray-600 mb-2">📊 总览</h2>
-        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 text-white shadow-md">
-          <div class="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <p class="text-xs opacity-70">总聚会次数</p>
-              <p class="text-2xl font-bold mt-1">{{ totalHangouts }}</p>
+      <!-- Rankings -->
+      <section class="mb-9 space-y-7">
+        <!-- Most rewarding -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">最值得</p>
+          </div>
+          <div v-if="mostRewarding.length === 0" class="text-[12px] text-stone-400">暂无数据</div>
+          <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+            <div
+              v-for="(s, i) in mostRewarding"
+              :key="s.friend.id"
+              class="flex items-center justify-between px-4 py-3"
+              :class="i > 0 ? 'border-t' : ''"
+              :style="i > 0 ? 'border-color: #ece9e4' : ''"
+            >
+              <span class="text-[14px] text-stone-800">{{ s.friend.name }}</span>
+              <span class="text-[13px] font-medium tabular-nums" :class="gapTone(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
             </div>
-            <div>
-              <p class="text-xs opacity-70">平均感受</p>
-              <p class="text-2xl font-bold mt-1">{{ avgQuality }}</p>
+          </div>
+        </div>
+
+        <!-- Needs attention -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">需要关注</p>
+          </div>
+          <div v-if="needsAttention.length === 0" class="text-[12px] text-stone-400">暂无数据</div>
+          <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+            <div
+              v-for="(s, i) in needsAttention"
+              :key="s.friend.id"
+              class="flex items-center justify-between px-4 py-3"
+              :class="i > 0 ? 'border-t' : ''"
+              :style="i > 0 ? 'border-color: #ece9e4' : ''"
+            >
+              <span class="text-[14px] text-stone-800">{{ s.friend.name }}</span>
+              <span class="text-[13px] font-medium tabular-nums" :class="gapTone(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
             </div>
-            <div>
-              <p class="text-xs opacity-70">最常见类型</p>
-              <p class="text-lg font-bold mt-1">{{ mostCommonType || '-' }}</p>
+          </div>
+        </div>
+
+        <!-- Long time no see -->
+        <div>
+          <div class="flex items-center gap-2 mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">好久不见</p>
+          </div>
+          <div v-if="longTimeNoSee.length === 0" class="text-[12px] text-stone-400">最近都有联系，很棒</div>
+          <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+            <div
+              v-for="(s, i) in longTimeNoSee"
+              :key="s.friend.id"
+              class="flex items-center justify-between px-4 py-3"
+              :class="i > 0 ? 'border-t' : ''"
+              :style="i > 0 ? 'border-color: #ece9e4' : ''"
+            >
+              <span class="text-[14px] text-stone-800">{{ s.friend.name }}</span>
+              <span class="text-[13px] font-medium tabular-nums" :class="gapTone(s.gap)">{{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}</span>
             </div>
-            <div>
-              <p class="text-xs opacity-70">最常见的朋友</p>
-              <p class="text-lg font-bold mt-1">{{ mostFrequentFriend || '-' }}</p>
-            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Overview -->
+      <section class="mb-2">
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">总览</p>
+        <div class="grid grid-cols-2 rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
+          <div class="p-4">
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">总聚会次数</p>
+            <p class="text-[26px] font-light text-stone-900 mt-1 tabular-nums tracking-tight">{{ totalHangouts }}</p>
+          </div>
+          <div class="p-4 border-l" style="border-color: #ece9e4">
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">平均感受</p>
+            <p class="text-[26px] font-light text-stone-900 mt-1 tabular-nums tracking-tight">{{ avgQuality }}</p>
+          </div>
+          <div class="p-4 border-t" style="border-color: #ece9e4">
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">最常见类型</p>
+            <p class="text-[15px] font-medium text-stone-900 mt-1.5 truncate">{{ mostCommonType || '—' }}</p>
+          </div>
+          <div class="p-4 border-t border-l" style="border-color: #ece9e4">
+            <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">最常见的朋友</p>
+            <p class="text-[15px] font-medium text-stone-900 mt-1.5 truncate">{{ mostFrequentFriend || '—' }}</p>
           </div>
         </div>
       </section>

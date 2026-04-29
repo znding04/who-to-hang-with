@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useGapThreshold } from '../composables/useGapThreshold'
+import { useViewMode } from '../composables/useViewMode'
 
 const props = defineProps({
   scores: { type: Array, required: true },
@@ -11,9 +12,9 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 const { gapThreshold, MIN, MAX } = useGapThreshold()
+const { mode } = useViewMode()
 
-// Popup state
-const popup = ref(null) // { friend, quantity, quality, gap, x, y }
+const popup = ref(null)
 
 const padding = 40
 const size = 340
@@ -28,34 +29,30 @@ function y(val) {
 }
 
 function dotColor(gap) {
-  if (gap > gapThreshold.value) return '#22c55e'
-  if (gap < -gapThreshold.value) return '#ef4444'
-  return '#3b82f6'
+  if (gap > gapThreshold.value) return '#10b981' // emerald-500
+  if (gap < -gapThreshold.value) return '#fb7185' // rose-400
+  return '#a8a29e' // stone-400
 }
 
-// Hexagonal balanced band: |quality - quantity| <= threshold, intersected with [0,100]^2.
-// Includes the upper-right (100,100) and lower-left (0,0) corners.
 const bandPoints = computed(() => {
   const t = Math.min(100, gapThreshold.value)
   const pts = [
-    [t, 0],          // bottom edge enter (lower line)
-    [100, 100 - t],  // right edge exit (lower line)
-    [100, 100],      // upper-right corner
-    [100 - t, 100],  // top edge exit (upper line)
-    [0, t],          // left edge exit (upper line)
-    [0, 0],          // lower-left corner
+    [t, 0],
+    [100, 100 - t],
+    [100, 100],
+    [100 - t, 100],
+    [0, t],
+    [0, 0],
   ]
   return pts.map(([qx, qy]) => `${x(qx)},${y(qy)}`).join(' ')
 })
 
 function handleDotClick(s, event) {
-  // Show popup with friend info instead of navigation
   const svgEl = event.currentTarget.closest('svg')
   const rect = svgEl.getBoundingClientRect()
   const dotEl = event.currentTarget.querySelector('circle')
   const dotRect = dotEl.getBoundingClientRect()
 
-  // Position popup near the dot, offset to stay within bounds
   const relativeX = ((dotRect.left + dotRect.width / 2) - rect.left) / rect.width * size
   const relativeY = ((dotRect.top + dotRect.height / 2) - rect.top) / rect.height * size
 
@@ -78,122 +75,137 @@ function gapLabel(gap) {
   if (gap < -gapThreshold.value) return '不平衡'
   return '平衡'
 }
+
+function gapToneClass(gap) {
+  if (gap > gapThreshold.value) return 'text-emerald-600'
+  if (gap < -gapThreshold.value) return 'text-rose-500'
+  return 'text-stone-500'
+}
 </script>
 
 <template>
   <div class="relative">
     <svg :viewBox="`0 0 ${size} ${size}`" class="w-full" style="max-width: 400px;">
       <!-- Axes -->
-      <line :x1="padding" :y1="size - padding" :x2="size - padding" :y2="size - padding" stroke="#d1d5db" stroke-width="1" />
-      <line :x1="padding" :y1="size - padding" :x2="padding" :y2="padding" stroke="#d1d5db" stroke-width="1" />
+      <line :x1="padding" :y1="size - padding" :x2="size - padding" :y2="size - padding" stroke="#d6d3d1" stroke-width="1" />
+      <line :x1="padding" :y1="size - padding" :x2="padding" :y2="padding" stroke="#d6d3d1" stroke-width="1" />
 
-      <!-- Axis labels -->
+      <!-- Axis tick labels -->
       <text v-for="v in [0, 50, 100]" :key="'x' + v"
-        :x="x(v)" :y="size - padding + 14" text-anchor="middle" font-size="9" fill="#9ca3af">{{ v }}</text>
+        :x="x(v)" :y="size - padding + 14" text-anchor="middle" font-size="9" fill="#a8a29e">{{ v }}</text>
       <text v-for="v in [0, 50, 100]" :key="'y' + v"
-        :x="padding - 8" :y="y(v) + 3" text-anchor="end" font-size="9" fill="#9ca3af">{{ v }}</text>
+        :x="padding - 8" :y="y(v) + 3" text-anchor="end" font-size="9" fill="#a8a29e">{{ v }}</text>
 
       <!-- Axis titles -->
-      <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#6b7280">频率 →</text>
-      <text :x="12" :y="size / 2" text-anchor="middle" font-size="10" fill="#6b7280" transform="rotate(-90, 12, 150)">感受 →</text>
+      <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#78716c">频率 →</text>
+      <text :x="12" :y="size / 2" text-anchor="middle" font-size="10" fill="#78716c" transform="rotate(-90, 12, 150)">感受 →</text>
 
-      <!-- Balanced band along x=y -->
-      <polygon :points="bandPoints" fill="#3b82f6" fill-opacity="0.08" stroke="#93c5fd" stroke-width="1" stroke-dasharray="3 3" />
+      <!-- Balanced band -->
+      <polygon :points="bandPoints" fill="#a8a29e" fill-opacity="0.06" stroke="#d6d3d1" stroke-width="1" stroke-dasharray="3 3" />
 
-      <!-- Y=X diagonal reference line -->
-      <line :x1="x(0)" :y1="y(0)" :x2="x(100)" :y2="y(100)" stroke="#d1d5db" stroke-width="1" stroke-dasharray="4 3" />
+      <!-- Y=X diagonal -->
+      <line :x1="x(0)" :y1="y(0)" :x2="x(100)" :y2="y(100)" stroke="#e7e5e4" stroke-width="1" stroke-dasharray="4 3" />
 
-      <!-- Center crosshair at (50, 50) -->
-      <line :x1="x(50) - 6" :y1="y(50)" :x2="x(50) + 6" :y2="y(50)" stroke="#9ca3af" stroke-width="1" />
-      <line :x1="x(50)" :y1="y(50) - 6" :x2="x(50)" :y2="y(50) + 6" stroke="#9ca3af" stroke-width="1" />
+      <!-- Center crosshair -->
+      <line :x1="x(50) - 6" :y1="y(50)" :x2="x(50) + 6" :y2="y(50)" stroke="#a8a29e" stroke-width="1" />
+      <line :x1="x(50)" :y1="y(50) - 6" :x2="x(50)" :y2="y(50) + 6" stroke="#a8a29e" stroke-width="1" />
 
-      <!-- Friend dots with name labels -->
+      <!-- Friend dots -->
       <g v-for="s in scores" :key="s.friend.id" class="cursor-pointer" @click="handleDotClick(s, $event)">
-        <!-- Name label (offset to the right of the dot) -->
         <text
           :x="x(s.quantity) + 14"
           :y="y(s.quality) + 3"
           font-size="9"
-          fill="#374151"
+          fill="#44403c"
           :opacity="highlightId && highlightId !== s.friend.id ? 0.2 : 0.85"
         >{{ s.friend.name }}</text>
 
-        <!-- Dot -->
         <circle
-          :cx="x(s.quantity)" :cy="y(s.quality)" r="10"
+          :cx="x(s.quantity)" :cy="y(s.quality)" r="9"
           :fill="dotColor(s.gap)"
-          :opacity="highlightId && highlightId !== s.friend.id ? 0.2 : 0.85"
-          :stroke="highlightId === s.friend.id ? '#1e3a5f' : 'white'"
+          :opacity="highlightId && highlightId !== s.friend.id ? 0.2 : 0.9"
+          :stroke="highlightId === s.friend.id ? '#1c1917' : 'white'"
           :stroke-width="highlightId === s.friend.id ? 2 : 1"
         />
         <title>{{ s.friend.name }} (频率: {{ Math.round(s.quantity) }}, 感受: {{ Math.round(s.quality) }})</title>
       </g>
     </svg>
 
-    <!-- Threshold tuner -->
-    <div v-if="showTuner" class="mt-2 px-1">
-      <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
-        <span>平衡范围 ±{{ gapThreshold }}</span>
-        <span class="text-gray-400">越大越宽容</span>
+    <!-- View mode toggle + threshold tuner -->
+    <div v-if="showTuner" class="mt-3 px-1 space-y-3">
+      <div class="flex items-center justify-between text-[11px] text-stone-500">
+        <span>显示</span>
+        <div class="flex gap-1">
+          <button
+            type="button"
+            @click="mode = 'normalized'"
+            class="px-2.5 py-0.5 rounded-full text-[11px] border-none cursor-pointer transition-colors touch-manipulation"
+            :class="mode === 'normalized' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'"
+          >标准化</button>
+          <button
+            type="button"
+            @click="mode = 'absolute'"
+            class="px-2.5 py-0.5 rounded-full text-[11px] border-none cursor-pointer transition-colors touch-manipulation"
+            :class="mode === 'absolute' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'"
+          >绝对值</button>
+        </div>
       </div>
-      <input
-        type="range"
-        :min="MIN"
-        :max="MAX"
-        v-model.number="gapThreshold"
-        class="w-full accent-blue-500 touch-manipulation"
-      />
+      <div>
+        <div class="flex items-center justify-between text-[11px] text-stone-500 mb-1.5">
+          <span>平衡范围 ±{{ gapThreshold }}</span>
+          <span class="text-stone-400">越大越宽容</span>
+        </div>
+        <input
+          type="range"
+          :min="MIN"
+          :max="MAX"
+          v-model.number="gapThreshold"
+          class="w-full touch-manipulation"
+          style="accent-color: #1c1917"
+        />
+      </div>
     </div>
 
-    <!-- Popup card -->
+    <!-- Popup -->
     <div
       v-if="popup"
-      class="absolute z-10 bg-white rounded-xl shadow-lg border border-gray-200 p-3 text-sm"
-      style="min-width: 160px; max-width: 200px;"
+      class="absolute z-10 bg-white rounded-xl p-3 text-sm"
+      style="min-width: 160px; max-width: 200px; border: 1px solid #ece9e4; box-shadow: 0 4px 16px rgba(28, 25, 23, 0.06);"
       :style="{
         left: Math.min(popup.x * (400 / size) + 'px', '260px'),
         top: Math.max(popup.y * (400 / size) - 60, 0) + 'px',
       }"
       @click.stop
     >
-      <!-- Close button -->
       <button
-        class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 bg-transparent border-none cursor-pointer text-xs"
+        class="absolute top-1 right-1 w-5 h-5 flex items-center justify-center text-stone-400 hover:text-stone-600 bg-transparent border-none cursor-pointer text-xs"
         @click="closePopup"
       >✕</button>
 
-      <!-- Friend name (click to open detail page) -->
       <router-link
         :to="`/friends/${popup.friend.id}`"
-        class="block font-semibold text-blue-600 text-base mb-1 no-underline active:text-blue-700"
+        class="block font-semibold text-stone-900 text-base mb-1 no-underline"
         @click="closePopup"
       >{{ popup.friend.name }} ›</router-link>
 
-      <!-- Tags -->
-      <p v-if="popup.friend.tags && popup.friend.tags.length" class="text-xs text-gray-400 mb-2">
+      <p v-if="popup.friend.tags && popup.friend.tags.length" class="text-[11px] text-stone-400 mb-2">
         {{ popup.friend.tags.join(' · ') }}
       </p>
 
-      <!-- Gap score -->
       <div class="mb-1">
-        <span class="text-xs text-gray-500">差值: </span>
-        <span
-          class="text-xs font-semibold"
-          :class="popup.gap > gapThreshold ? 'text-green-500' : popup.gap < -gapThreshold ? 'text-red-500' : 'text-blue-500'"
-        >
+        <span class="text-[11px] text-stone-500">差值: </span>
+        <span class="text-[11px] font-semibold" :class="gapToneClass(popup.gap)">
           {{ popup.gap > 0 ? '+' : '' }}{{ Math.round(popup.gap) }}
         </span>
-        <span class="text-xs text-gray-400 ml-1">{{ gapLabel(popup.gap) }}</span>
+        <span class="text-[11px] text-stone-400 ml-1">{{ gapLabel(popup.gap) }}</span>
       </div>
 
-      <!-- Scores -->
-      <div class="text-xs text-gray-500 space-y-0.5">
+      <div class="text-[11px] text-stone-500 space-y-0.5">
         <div>频率: {{ Math.round(popup.quantity) }}</div>
         <div>感受: {{ Math.round(popup.quality) }}</div>
       </div>
     </div>
 
-    <!-- Popup overlay (click outside to close) -->
     <div v-if="popup" class="fixed inset-0 z-0" @click="closePopup"></div>
   </div>
 </template>
