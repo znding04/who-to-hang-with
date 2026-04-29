@@ -1,14 +1,14 @@
 # 找谁玩 — Project Progress
 
 ## Last Updated
-2026-04-28 21:03
+2026-04-28 (post-deploy)
 
 ## Current Status
 
 ### ✅ Completed
 - SPEC.md written and pushed
 - README.md written
-- GitHub repo created: znding04/zane-wechat-miniapp
+- GitHub repo created: znding04/who-to-play-with
 - Vue 3 + Vite + Tailwind project scaffolded
 - Demo seed data (4 friends, 7 hangouts)
 - WeChat miniapp wrapper layer (wechat/ directory)
@@ -28,19 +28,29 @@
   - ✅ LogHangout page shows friend tags next to names
 
 ### 🚧 In Progress
-- WebView placeholder URL needs real deployed URL
+- Mobile / WeChat in-app browser testing of the live deploy
 
 ### ⏳ Pending
-- Deploy Vue app to get real WebView URL
-- Test in WeChat DevTools with real appid
-- Get WeChat account app ID
+- (deferred) Mini Program path: WeChat DevTools test with real appid, get WeChat account app ID
+
+## Deployment
+
+**Chosen route: A — H5 hosted publicly, shared via WeChat link / QR**
+
+- Live URL: https://who-to-play-with.ljding94.workers.dev/
+- Host: Cloudflare Pages (deployed via `ljding94` Cloudflare account; repo owned by `znding04`)
+- Build: `npm run build` → `dist/` (auto-deploys on push to `main`)
+- Distribution: paste link into WeChat chat, or generate a QR code
+
+The `wechat/` Mini Program wrapper directory is **not used** for Route A. It is preserved for the deferred Mini Program path (Route B), which would require Tencent review, a 小程序 account, and a cross-compile (uni-app / Taro) or rewrite.
 
 ## Architecture
-wechat/           → WeChat miniapp wrapper
-wechat/h5/        → Built Vue app (WebView asset host)
 src/pages/        → Vue page components
-src/composables/  → Shared logic (useSeedData, etc.)
-src/components/  → ScatterPlot, InsightsPanel
+src/composables/  → Shared logic (useSeedData, useFriends, useScoring)
+src/components/   → ScatterPlot, InsightsPanel
+dist/             → Production build output (deployed to Cloudflare)
+wechat/           → (Unused for Route A) Mini Program wrapper, kept for future Route B
+wechat/h5/        → (Unused for Route A) WebView asset target for Mini Program
 
 ## Scoring Model
 - Quantity: log(1 + total_hangouts) × decay(days_since_last ~60 days)
