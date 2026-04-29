@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useGapThreshold } from '../composables/useGapThreshold'
 import { useViewMode } from '../composables/useViewMode'
+import { useFrequencyMode } from '../composables/useFrequencyMode'
 import { useI18n } from '../composables/useI18n.js'
 
 const { t } = useI18n()
@@ -19,6 +20,15 @@ const emit = defineEmits(['select'])
 
 const { gapThreshold, MIN, MAX } = useGapThreshold()
 const { mode } = useViewMode()
+const { freqMode } = useFrequencyMode()
+
+const xAxisLabel = computed(() =>
+  freqMode.value === 'permonth' ? t('scatter.xAxisPerMonth') : t('scatter.xAxisLifetime')
+)
+
+function toggleFreqMode() {
+  freqMode.value = freqMode.value === 'permonth' ? 'lifetime' : 'permonth'
+}
 
 const popup = ref(null)
 
@@ -114,12 +124,14 @@ function gapToneClass(gap) {
         :x="padding - 8" :y="y(v) + 3" text-anchor="end" font-size="9" fill="#a8a29e">{{ v }}</text>
 
       <!-- Axis titles -->
-      <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#78716c">{{ t('scatter.xAxis') }}</text>
+      <g class="cursor-pointer select-none" @click="toggleFreqMode">
+        <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#0ea5e9" font-weight="500">{{ xAxisLabel }} ⇄ →</text>
+      </g>
       <text :x="10" :y="size / 2" text-anchor="middle" font-size="10" fill="#78716c" :transform="`rotate(-90, 10, ${size / 2})`">{{ t('scatter.yAxis') }}</text>
 
       <!-- Directional annotations: top = high quality "hang with more", bottom = low quality "hang with less" -->
-      <text :x="size / 2" :y="padding + 18" text-anchor="middle" font-size="11" fill="#a8a29e" font-style="italic">{{ t('scatter.hangMore') }} →</text>
-      <text :x="size / 2" :y="size - padding - 10" text-anchor="middle" font-size="11" fill="#a8a29e" font-style="italic">← {{ t('scatter.hangLess') }}</text>
+      <text :x="size / 2" :y="padding + 18" text-anchor="middle" font-size="11" fill="#a8a29e" font-style="italic">→ {{ t('scatter.hangMore') }}</text>
+      <text :x="size / 2" :y="size - padding - 10" text-anchor="middle" font-size="11" fill="#a8a29e" font-style="italic">{{ t('scatter.hangLess') }} ←</text>
 
       <!-- Balanced band -->
       <polygon :points="bandPoints" fill="#a8a29e" fill-opacity="0.06" stroke="#d6d3d1" stroke-width="1" stroke-dasharray="3 3" />

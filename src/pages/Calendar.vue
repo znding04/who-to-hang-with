@@ -1,15 +1,27 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { useFriends } from '../composables/useFriends'
 import { useCustomTypes } from '../composables/useCustomTypes'
 import { useCustomDurations } from '../composables/useCustomDurations'
 import { useI18n } from '../composables/useI18n.js'
 import { HANGOUT_TYPES, DURATION_OPTIONS, displayLabel } from '../types/index.js'
 
-const { friends, hangouts } = useFriends()
+const router = useRouter()
+const { friends, hangouts, deleteHangout } = useFriends()
 const { customTypes } = useCustomTypes()
 const { customDurations } = useCustomDurations()
 const { t, locale } = useI18n()
+
+function handleEditHangout(hangoutId) {
+  router.push({ path: '/log', query: { edit: hangoutId } })
+}
+
+function handleDeleteHangout(hangoutId) {
+  if (confirm(t('friendDetail.confirmDeleteHangout'))) {
+    deleteHangout(hangoutId)
+  }
+}
 
 const EN_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
@@ -257,6 +269,16 @@ const thisMonthHangouts = computed(() => {
             <span class="text-[11.5px] text-stone-400">{{ durationLabel(h.duration) }}</span>
           </div>
           <p v-if="h.note" class="text-[12.5px] text-stone-500 mt-1.5 leading-relaxed">{{ h.note }}</p>
+          <div class="flex items-center gap-2 mt-2">
+            <button
+              @click="handleEditHangout(h.id)"
+              class="px-2 py-0.5 text-[11px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded border-none cursor-pointer touch-manipulation"
+            >{{ t('friendDetail.editHangout') }}</button>
+            <button
+              @click="handleDeleteHangout(h.id)"
+              class="px-2 py-0.5 text-[11px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded border-none cursor-pointer touch-manipulation"
+            >{{ t('friendDetail.deleteHangout') }}</button>
+          </div>
         </div>
       </div>
     </section>

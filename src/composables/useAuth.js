@@ -72,11 +72,12 @@ export function useAuth() {
     try {
       _loading.value = true;
       const data = await api.getMe();
+      // Push any local data to cloud BEFORE flipping isLoggedIn — the
+      // useFriends watcher syncs from cloud as soon as isLoggedIn flips,
+      // and we don't want it to race the migration push.
+      await migrateLocalStorage();
       _user.value = data.user;
       localStorage.setItem(AUTH_KEY, JSON.stringify({ user: data.user }));
-
-      // Migrate localStorage data if this is first login
-      await migrateLocalStorage();
 
       return true;
     } catch (err) {
@@ -96,9 +97,9 @@ export function useAuth() {
       const data = await api.verifyMagicToken(token);
       localStorage.setItem('wtpw_token', data.token);
       document.cookie = `wtpw_session=${data.token}; path=/; max-age=${60 * 60 * 24 * 30}`;
+      await migrateLocalStorage();
       _user.value = data.user;
       localStorage.setItem(AUTH_KEY, JSON.stringify({ user: data.user }));
-      await migrateLocalStorage();
       return true;
     } catch (err) {
       _error.value = err.message;
@@ -136,9 +137,9 @@ export function useAuth() {
       if (data.token) {
         localStorage.setItem('wtpw_token', data.token);
         document.cookie = `wtpw_session=${data.token}; path=/; max-age=${60 * 60 * 24 * 30}`;
+        await migrateLocalStorage();
         _user.value = data.user;
         localStorage.setItem(AUTH_KEY, JSON.stringify({ user: data.user }));
-        await migrateLocalStorage();
       }
       return data;
     } catch (err) {
@@ -160,9 +161,9 @@ export function useAuth() {
       if (data.token) {
         localStorage.setItem('wtpw_token', data.token);
         document.cookie = `wtpw_session=${data.token}; path=/; max-age=${60 * 60 * 24 * 30}`;
+        await migrateLocalStorage();
         _user.value = data.user;
         localStorage.setItem(AUTH_KEY, JSON.stringify({ user: data.user }));
-        await migrateLocalStorage();
       }
       return data;
     } catch (err) {

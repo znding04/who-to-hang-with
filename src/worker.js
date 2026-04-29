@@ -705,7 +705,9 @@ router.add('POST', '/api/friends', requireAuth(async (req, env, params, url, use
 
   if (!name) return json({ error: 'Name required' }, 400);
 
-  const id = crypto.randomUUID();
+  // Honor client-supplied id so subsequent updates and hangout-friend links
+  // resolve correctly. Falls back to generating one if missing.
+  const id = body.id || crypto.randomUUID();
   const now = Date.now();
 
   await env.DB
@@ -717,7 +719,7 @@ router.add('POST', '/api/friends', requireAuth(async (req, env, params, url, use
 }));
 
 // PUT /api/friends/:id — Update friend
-router.add('PUT', '/api/friends/:id', requireAuth(async (req, env, params, user) => {
+router.add('PUT', '/api/friends/:id', requireAuth(async (req, env, params, url, user) => {
   const { id } = params;
   const body = await req.json();
 
@@ -762,7 +764,7 @@ router.add('PUT', '/api/friends/:id', requireAuth(async (req, env, params, user)
 }));
 
 // DELETE /api/friends/:id — Delete friend
-router.add('DELETE', '/api/friends/:id', requireAuth(async (req, env, params, user) => {
+router.add('DELETE', '/api/friends/:id', requireAuth(async (req, env, params, url, user) => {
   const { id } = params;
   const existing = await env.DB.prepare(`SELECT * FROM friends WHERE id = ? AND user_id = ?`).bind(id, user.userId).first();
   if (!existing) return json({ error: 'Friend not found' }, 404);
@@ -810,7 +812,9 @@ router.add('POST', '/api/hangouts', requireAuth(async (req, env, params, url, us
   if (!type || !date) return json({ error: 'Type and date required' }, 400);
   if (!friendIds || friendIds.length === 0) return json({ error: 'At least one friend required' }, 400);
 
-  const id = crypto.randomUUID();
+  // Honor client-supplied id so the client's local state (and any
+  // hangout-friend links it tracks) match D1.
+  const id = body.id || crypto.randomUUID();
   const now = Date.now();
 
   await env.DB
@@ -829,7 +833,7 @@ router.add('POST', '/api/hangouts', requireAuth(async (req, env, params, url, us
 }));
 
 // PUT /api/hangouts/:id — Update hangout
-router.add('PUT', '/api/hangouts/:id', requireAuth(async (req, env, params, user) => {
+router.add('PUT', '/api/hangouts/:id', requireAuth(async (req, env, params, url, user) => {
   const { id } = params;
   const body = await req.json();
 
@@ -884,7 +888,7 @@ router.add('PUT', '/api/hangouts/:id', requireAuth(async (req, env, params, user
 }));
 
 // DELETE /api/hangouts/:id — Delete hangout
-router.add('DELETE', '/api/hangouts/:id', requireAuth(async (req, env, params, user) => {
+router.add('DELETE', '/api/hangouts/:id', requireAuth(async (req, env, params, url, user) => {
   const { id } = params;
   const existing = await env.DB.prepare(`SELECT * FROM hangouts WHERE id = ? AND user_id = ?`).bind(id, user.userId).first();
   if (!existing) return json({ error: 'Hangout not found' }, 404);
@@ -892,6 +896,70 @@ router.add('DELETE', '/api/hangouts/:id', requireAuth(async (req, env, params, u
   await env.DB.prepare(`DELETE FROM hangout_friends WHERE hangout_id = ?`).bind(id).run();
   await env.DB.prepare(`DELETE FROM hangouts WHERE id = ? AND user_id = ?`).bind(id, user.userId).run();
 
+  return success();
+}));
+
+// ============================================================
+// Custom hangout types
+// ============================================================
+
+router.add('GET', '/api/custom-types', requireAuth(async (req, env, params, url, user) => {
+  const res = await env.DB
+    .prepare(`SELECT value, label, icon FROM custom_hangout_types WHERE user_id = ? ORDER BY created_at`)
+    .bind(user.userId)
+    .all();
+  return json({ customTypes: res.results });
+}));
+
+router.add('POST', '/api/custom-types', requireAuth(async (req, env, params, url, user) => {
+  const body = await req.json();
+  const { value, label, icon } = body;
+  if (!value || !label) return json({ error: 'value and label required' }, 400);
+  await env.DB
+    .prepare(`INSERT OR REPLACE INTO custom_hangout_types (value, user_id, label, icon, created_at) VALUES (?, ?, ?, ?, ?)`)
+    .bind(value, user.userId, label, icon || '📦', Date.now())
+    .run();
+  return json({ customType: { value, label, icon: icon || '📦' } }, 201);
+}));
+
+router.add('DELETE', '/api/custom-types/:value', requireAuth(async (req, env, params, url, user) => {
+  const { value } = params;
+  await env.DB
+    .prepare(`DELETE FROM custom_hangout_types WHERE value = ? AND user_id = ?`)
+    .bind(value, user.userId)
+    .run();
+  return success();
+}));
+
+// ============================================================
+// Custom durations
+// ============================================================
+
+router.add('GET', '/api/custom-durations', requireAuth(async (req, env, params, url, user) => {
+  const res = await env.DB
+    .prepare(`SELECT value, label FROM custom_durations WHERE user_id = ? ORDER BY created_at`)
+    .bind(user.userId)
+    .all();
+  return json({ customDurations: res.results });
+}));
+
+router.add('POST', '/api/custom-durations', requireAuth(async (req, env, params, url, user) => {
+  const body = await req.json();
+  const { value, label } = body;
+  if (!value || !label) return json({ error: 'value and label required' }, 400);
+  await env.DB
+    .prepare(`INSERT OR REPLACE INTO custom_durations (value, user_id, label, created_at) VALUES (?, ?, ?, ?)`)
+    .bind(value, user.userId, label, Date.now())
+    .run();
+  return json({ customDuration: { value, label } }, 201);
+}));
+
+router.add('DELETE', '/api/custom-durations/:value', requireAuth(async (req, env, params, url, user) => {
+  const { value } = params;
+  await env.DB
+    .prepare(`DELETE FROM custom_durations WHERE value = ? AND user_id = ?`)
+    .bind(value, user.userId)
+    .run();
   return success();
 }));
 

@@ -67,3 +67,25 @@ CREATE INDEX IF NOT EXISTS idx_friends_user_id ON friends(user_id);
 CREATE INDEX IF NOT EXISTS idx_hangouts_user_id ON hangouts(user_id);
 CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires ON auth_tokens(expires_at);
 CREATE INDEX IF NOT EXISTS idx_users_provider ON users(auth_provider, provider_user_id);
+
+-- Custom hangout types (user-defined activity categories like "🏓 pong")
+CREATE TABLE IF NOT EXISTS custom_hangout_types (
+  value TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Custom durations (user-defined durations like "3 hours")
+CREATE TABLE IF NOT EXISTS custom_durations (
+  value TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  label TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_custom_types_user ON custom_hangout_types(user_id);
+CREATE INDEX IF NOT EXISTS idx_custom_durations_user ON custom_durations(user_id);

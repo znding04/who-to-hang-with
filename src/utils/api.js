@@ -119,4 +119,26 @@ export const api = {
   async migrateData(friends, hangouts) {
     return request('POST', '/api/data/migrate', { friends, hangouts });
   },
+
+  // Custom hangout types
+  async getCustomTypes() {
+    return request('GET', '/api/custom-types');
+  },
+  async createCustomType(data) {
+    return request('POST', '/api/custom-types', data);
+  },
+  async deleteCustomType(value) {
+    return request('DELETE', `/api/custom-types/${value}`);
+  },
+
+  // Custom durations
+  async getCustomDurations() {
+    return request('GET', '/api/custom-durations');
+  },
+  async createCustomDuration(data) {
+    return request('POST', '/api/custom-durations', data);
+  },
+  async deleteCustomDuration(value) {
+    return request('DELETE', `/api/custom-durations/${value}`);
+  },
 };

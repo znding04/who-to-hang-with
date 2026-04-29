@@ -64,17 +64,16 @@ const _cloudHangouts = ref([])
 const _cloudLoading = ref(false)
 const _cloudSynced = ref(false)
 
-// Persist to localStorage only when not in cloud mode
+// Mirror in-memory state to localStorage so a refresh starts from the latest
+// known state (cloud data once we've synced, local edits otherwise). The
+// previous behaviour skipped writes after cloud sync, leaving stale local
+// friend/hangout ids that would race with the next sync on reload.
 watch(_friends, (val) => {
-  if (!_cloudSynced.value) {
-    localStorage.setItem(FRIENDS_KEY, JSON.stringify(val))
-  }
+  localStorage.setItem(FRIENDS_KEY, JSON.stringify(val))
 }, { deep: true })
 
 watch(_hangouts, (val) => {
-  if (!_cloudSynced.value) {
-    localStorage.setItem(HANGOUTS_KEY, JSON.stringify(val))
-  }
+  localStorage.setItem(HANGOUTS_KEY, JSON.stringify(val))
 }, { deep: true })
 
 const { showSeed } = useDataFilter()
@@ -96,6 +95,7 @@ export const _internalState = { friends: _friends, hangouts: _hangouts }
 // ============================================================
 
 async function syncFromCloud() {
+  if (_cloudLoading.value) return
   _cloudLoading.value = true
   try {
     const [friendsData, hangoutsData] = await Promise.all([
@@ -115,6 +115,25 @@ async function syncFromCloud() {
     _cloudLoading.value = false
   }
 }
+
+// Auto-sync from cloud when the user logs in. This runs once at module init
+// (covering the "already-logged-in on app boot" path) and again whenever the
+// user transitions from logged-out → logged-in.
+const { isLoggedIn: _isLoggedInRef } = useAuth()
+watch(
+  _isLoggedInRef,
+  (loggedIn) => {
+    if (loggedIn) {
+      if (!_cloudSynced.value && !_cloudLoading.value) syncFromCloud()
+    } else {
+      // Clear sync state on logout so the next login fetches fresh data.
+      _cloudSynced.value = false
+      _cloudFriends.value = []
+      _cloudHangouts.value = []
+    }
+  },
+  { immediate: true }
+)
 
 export function useFriends() {
   // Lazy cloud sync on first API call
