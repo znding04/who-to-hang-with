@@ -3,10 +3,12 @@ import { computed } from 'vue'
 import { useFriends } from '../composables/useFriends'
 import { useScoring } from '../composables/useScoring'
 import { useGapThreshold } from '../composables/useGapThreshold'
+import { useI18n } from '../composables/useI18n.js'
 
 const { hangouts } = useFriends()
 const { scoredFriends } = useScoring()
 const { gapThreshold } = useGapThreshold()
+const { t } = useI18n()
 
 const insights = computed(() => {
   const scored = scoredFriends.value
@@ -16,15 +18,16 @@ const insights = computed(() => {
   if (freqLowQuality.length > 0) {
     result.push({
       tone: 'negative',
-      text: `你和 ${freqLowQuality[0].friend.name} 见面很多但感觉一般，可能投入太多了`,
+      text: t('insights.overInvested', { name: freqLowQuality[0].friend.name }),
     })
   }
 
   const greatRare = scored.filter(s => s.gap > 10 && s.quantity < 20)
   if (greatRare.length > 0) {
+    const suffix = greatRare.length > 1 ? t('insights.greatRareMore') : ''
     result.push({
       tone: 'positive',
-      text: `${greatRare[0].friend.name} 总是让你很开心，但好久没见了${greatRare.length > 1 ? '，还有其他朋友也是' : ''}`,
+      text: t('insights.greatRare', { name: greatRare[0].friend.name }) + suffix,
     })
   }
 
@@ -34,7 +37,7 @@ const insights = computed(() => {
   if (thisWeek >= 5) {
     result.push({
       tone: 'highlight',
-      text: `你这周聚会 ${thisWeek} 次！继续保持社交活跃`,
+      text: t('insights.activeWeek', { count: thisWeek }),
     })
   }
 
@@ -42,7 +45,7 @@ const insights = computed(() => {
   if (neglected.length > 0) {
     result.push({
       tone: 'neutral',
-      text: `${neglected[0].friend.name} 的友谊质量很高但很少联系，找时间聊聊天吧`,
+      text: t('insights.neglected', { name: neglected[0].friend.name }),
     })
   }
 
@@ -59,7 +62,7 @@ const toneDot = {
 
 <template>
   <div v-if="insights.length > 0">
-    <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">洞察</p>
+    <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('insights.title') }}</p>
     <div class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
       <div
         v-for="(insight, i) in insights"
@@ -74,6 +77,6 @@ const toneDot = {
     </div>
   </div>
   <div v-else-if="scoredFriends.length > 0" class="text-center text-stone-400 py-4 text-sm">
-    暂时没有洞察，多记录几次聚会吧
+    {{ t('insights.empty') }}
   </div>
 </template>

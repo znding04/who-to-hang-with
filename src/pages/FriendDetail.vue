@@ -5,7 +5,8 @@ import { useFriends } from '../composables/useFriends'
 import { useScoring } from '../composables/useScoring'
 import { useGapThreshold } from '../composables/useGapThreshold'
 import { useCustomTypes } from '../composables/useCustomTypes'
-import { HANGOUT_TYPES } from '../types/index.js'
+import { useI18n } from '../composables/useI18n.js'
+import { HANGOUT_TYPES, displayLabel } from '../types/index.js'
 import ScatterPlot from '../components/ScatterPlot.vue'
 
 const route = useRoute()
@@ -14,6 +15,7 @@ const { getFriendById, getHangoutsForFriend, deleteFriend } = useFriends()
 const { scoredFriends } = useScoring()
 const { gapThreshold } = useGapThreshold()
 const { customTypes } = useCustomTypes()
+const { t } = useI18n()
 
 function handleEdit() {
   if (!friend.value) return
@@ -22,7 +24,7 @@ function handleEdit() {
 
 function handleDelete() {
   if (!friend.value) return
-  if (confirm(`确定删除 ${friend.value.name}？`)) {
+  if (confirm(t('friends.confirmDelete', { name: friend.value.name }))) {
     deleteFriend(friend.value.id)
     router.push('/friends')
   }
@@ -42,13 +44,18 @@ const friendHangouts = computed(() => {
 })
 
 const typeMap = computed(() =>
-  Object.fromEntries([...HANGOUT_TYPES, ...customTypes.value].map(t => [t.value, t]))
+  Object.fromEntries([...HANGOUT_TYPES, ...customTypes.value].map(tp => [tp.value, tp]))
 )
 
+function typeLabel(type) {
+  const info = typeMap.value[type]
+  return info ? displayLabel(info, t) : type
+}
+
 function gapText(gap) {
-  if (gap < -gapThreshold.value) return `你在 ${friend.value.name} 身上投入很多但感觉一般`
-  if (gap > gapThreshold.value) return '这段友谊很值得'
-  return '平衡得很好'
+  if (gap < -gapThreshold.value) return t('friendDetail.gapInvested', { name: friend.value.name })
+  if (gap > gapThreshold.value) return t('friendDetail.gapWorth')
+  return t('friendDetail.gapBalanced')
 }
 
 function gapTone(gap) {
@@ -64,10 +71,10 @@ function rating(n) {
 const infoRows = computed(() => {
   if (!friend.value) return []
   const rows = []
-  if (friend.value.phone) rows.push({ label: '电话', value: friend.value.phone })
-  if (friend.value.birthday) rows.push({ label: '生日', value: friend.value.birthday })
-  if (friend.value.location) rows.push({ label: '所在地', value: friend.value.location })
-  if (friend.value.howWeMet) rows.push({ label: '怎么认识', value: friend.value.howWeMet })
+  if (friend.value.phone) rows.push({ label: t('friendDetail.phone'), value: friend.value.phone })
+  if (friend.value.birthday) rows.push({ label: t('friendDetail.birthday'), value: friend.value.birthday })
+  if (friend.value.location) rows.push({ label: t('friendDetail.location'), value: friend.value.location })
+  if (friend.value.howWeMet) rows.push({ label: t('friendDetail.howWeMet'), value: friend.value.howWeMet })
   return rows
 })
 </script>
@@ -80,22 +87,22 @@ const infoRows = computed(() => {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18 L9 12 L15 6" />
         </svg>
-        朋友列表
+        {{ t('friendDetail.back') }}
       </router-link>
       <div v-if="friend" class="flex items-center gap-2">
         <button
           @click="handleEdit"
           class="px-2.5 py-1 text-[11.5px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded-md border-none cursor-pointer touch-manipulation"
-        >编辑</button>
+        >{{ t('friendDetail.edit') }}</button>
         <button
           @click="handleDelete"
           class="px-2.5 py-1 text-[11.5px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded-md border-none cursor-pointer touch-manipulation"
-        >删除</button>
+        >{{ t('friendDetail.delete') }}</button>
       </div>
     </div>
 
     <div v-if="!friend" class="text-center text-stone-400 py-16 text-[13.5px]">
-      找不到这位朋友
+      {{ t('friendDetail.notFound') }}
     </div>
 
     <template v-else>
@@ -111,7 +118,7 @@ const infoRows = computed(() => {
 
       <!-- Gap indicator -->
       <div v-if="friendScore" class="mb-9 pb-7 border-b" style="border-color: #ece9e4">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-2">差值 · 感受 − 频率</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-2">{{ t('friendDetail.gapTitle') }}</p>
         <p class="text-[40px] font-light tabular-nums tracking-tight" :class="gapTone(friendScore.gap)">
           {{ friendScore.gap > 0 ? '+' : '' }}{{ Math.round(friendScore.gap) }}
         </p>
@@ -120,7 +127,7 @@ const infoRows = computed(() => {
 
       <!-- Basic info -->
       <div v-if="infoRows.length" class="mb-9">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">基本信息</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.info') }}</p>
         <div class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
           <div
             v-for="(row, i) in infoRows" :key="row.label"
@@ -136,7 +143,7 @@ const infoRows = computed(() => {
 
       <!-- Values -->
       <div v-if="friend.values && friend.values.length" class="mb-9">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">TA 的价值</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.values') }}</p>
         <div class="flex flex-wrap gap-1.5">
           <span
             v-for="val in friend.values" :key="val"
@@ -148,7 +155,7 @@ const infoRows = computed(() => {
 
       <!-- Important events -->
       <div v-if="friend.importantEvents && friend.importantEvents.length" class="mb-9">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">重要时刻</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.importantEvents') }}</p>
         <div class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
           <div
             v-for="(event, i) in friend.importantEvents" :key="i"
@@ -164,7 +171,7 @@ const infoRows = computed(() => {
 
       <!-- Mini scatter -->
       <div v-if="scoredFriends.length > 0" class="mb-9">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">在散点图中的位置</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.scatterPosition') }}</p>
         <div class="rounded-xl p-3" style="border: 1px solid #ece9e4; background: #fbfaf7">
           <ScatterPlot :scores="scoredFriends" :highlight-id="friendId" :show-tuner="false" />
         </div>
@@ -172,9 +179,9 @@ const infoRows = computed(() => {
 
       <!-- Hangout history -->
       <div class="mb-7">
-        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">聚会记录</p>
+        <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.hangoutHistory') }}</p>
         <div v-if="friendHangouts.length === 0" class="text-center text-stone-400 py-6 text-[13px]">
-          还没有聚会记录
+          {{ t('friendDetail.noHangouts') }}
         </div>
         <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
           <div
@@ -185,7 +192,7 @@ const infoRows = computed(() => {
           >
             <div class="flex items-center justify-between mb-1">
               <span class="text-[13.5px] font-medium text-stone-800">
-                {{ typeMap[h.type]?.icon || '' }} {{ typeMap[h.type]?.label || h.type }}
+                {{ typeMap[h.type]?.icon || '' }} {{ typeLabel(h.type) }}
               </span>
               <span class="text-[11.5px] text-stone-400 tabular-nums">{{ h.date }}</span>
             </div>
@@ -203,7 +210,7 @@ const infoRows = computed(() => {
         :to="`/log?friend=${friend.id}`"
         class="block w-full py-3 bg-stone-900 text-white text-center font-medium text-[15px] rounded-xl no-underline active:bg-stone-800"
       >
-        记录聚会
+        {{ t('friendDetail.logHangout') }}
       </router-link>
     </template>
   </div>

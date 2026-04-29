@@ -5,6 +5,7 @@ import { useFriends } from '../composables/useFriends'
 import { useScoring } from '../composables/useScoring'
 import { useGapThreshold } from '../composables/useGapThreshold'
 import { useDataFilter } from '../composables/useDataFilter'
+import { useI18n } from '../composables/useI18n.js'
 
 const router = useRouter()
 const route = useRoute()
@@ -12,9 +13,10 @@ const { friends, addFriend, updateFriend, deleteFriend, getFriendById, deleteSee
 const { scoredFriends } = useScoring()
 const { gapThreshold } = useGapThreshold()
 const { showSeed } = useDataFilter()
+const { t } = useI18n()
 
 function handleClearSeed() {
-  if (confirm('永久删除所有示例数据？此操作不可撤销。')) {
+  if (confirm(t('friends.confirmClearSeed'))) {
     deleteSeedData()
   }
 }
@@ -123,7 +125,7 @@ function toggleAdd() {
 }
 
 function handleDelete(friend) {
-  if (confirm(`确定删除 ${friend.name}？`)) {
+  if (confirm(t('friends.confirmDelete', { name: friend.name }))) {
     deleteFriend(friend.id)
   }
 }
@@ -144,15 +146,15 @@ const sortedFriends = computed(() =>
     <!-- Header -->
     <div class="flex items-end justify-between mb-9">
       <div>
-        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">Friends</p>
-        <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">朋友们</h1>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">{{ t('friends.tagline') }}</p>
+        <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">{{ t('friends.title') }}</h1>
       </div>
       <button
         @click="toggleAdd"
         class="px-3.5 py-1.5 text-[13px] font-medium border-none cursor-pointer transition-colors rounded-full"
         :class="showAdd ? 'bg-stone-100 text-stone-600' : 'bg-stone-900 text-white'"
       >
-        {{ showAdd ? '取消' : '+ 添加' }}
+        {{ showAdd ? t('friends.cancel') : t('friends.add') }}
       </button>
     </div>
 
@@ -165,12 +167,12 @@ const sortedFriends = computed(() =>
           class="w-3.5 h-3.5"
           style="accent-color: #1c1917"
         />
-        显示示例数据
+        {{ t('friends.showSeed') }}
       </label>
       <button
         @click="handleClearSeed"
         class="text-[12px] text-stone-500 hover:text-rose-500 bg-transparent border-none cursor-pointer touch-manipulation"
-      >清除示例</button>
+      >{{ t('friends.clearSeed') }}</button>
     </div>
 
     <!-- Add / Edit form -->
@@ -180,11 +182,11 @@ const sortedFriends = computed(() =>
       style="border: 1px solid #ece9e4; background: #fbfaf7"
     >
       <p v-if="showEdit" class="text-[11px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-1">
-        编辑 · {{ editingFriend?.name }}
+        {{ t('friends.editing', { name: editingFriend?.name }) }}
       </p>
       <input
         v-model="newName"
-        placeholder="名字 *"
+        :placeholder="t('friends.placeholders.name')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none transition-colors"
         style="border: 1px solid #ece9e4"
         onfocus="this.style.borderColor='#1c1917'"
@@ -193,14 +195,14 @@ const sortedFriends = computed(() =>
       />
       <input
         v-model="newTags"
-        placeholder="标签（逗号分隔，如：大学, 球友）"
+        :placeholder="t('friends.placeholders.tags')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
       <div class="grid grid-cols-2 gap-2">
         <input
           v-model="newPhone"
-          placeholder="电话"
+          :placeholder="t('friends.placeholders.phone')"
           class="bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
           style="border: 1px solid #ece9e4"
         />
@@ -213,25 +215,25 @@ const sortedFriends = computed(() =>
       </div>
       <input
         v-model="newLocation"
-        placeholder="所在地"
+        :placeholder="t('friends.placeholders.location')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newHowWeMet"
-        placeholder="怎么认识的"
+        :placeholder="t('friends.placeholders.howWeMet')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newImportantEvents"
-        placeholder="重要事件（逗号分隔）"
+        :placeholder="t('friends.placeholders.importantEvents')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
       <input
         v-model="newValues"
-        placeholder="价值（如：篮球搭档, 倾听者）"
+        :placeholder="t('friends.placeholders.values')"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
@@ -239,23 +241,23 @@ const sortedFriends = computed(() =>
         <button
           @click="handleEdit"
           class="flex-1 py-2.5 bg-stone-900 text-white text-[14px] font-medium rounded-lg border-none cursor-pointer"
-        >保存修改</button>
+        >{{ t('friends.saveEdit') }}</button>
         <button
           @click="resetForm"
           class="px-5 py-2.5 bg-stone-100 text-stone-600 text-[14px] rounded-lg border-none cursor-pointer"
-        >取消</button>
+        >{{ t('friends.cancel') }}</button>
       </div>
       <button
         v-else
         @click="handleAdd"
         class="w-full py-2.5 bg-stone-900 text-white text-[14px] font-medium rounded-lg border-none cursor-pointer mt-1"
-      >保存朋友</button>
+      >{{ t('friends.save') }}</button>
     </div>
 
     <!-- Empty -->
     <div v-if="friends.length === 0" class="text-center text-stone-400 py-16 text-[13.5px]">
-      还没有朋友<br />
-      <span class="text-[12px] mt-1 inline-block">点击右上角 + 添加 开始</span>
+      {{ t('friends.emptyTitle') }}<br />
+      <span class="text-[12px] mt-1 inline-block">{{ t('friends.emptyHint') }}</span>
     </div>
 
     <!-- Friend list -->
@@ -281,11 +283,11 @@ const sortedFriends = computed(() =>
           <button
             @click.stop="openEdit(s.friend)"
             class="px-2 py-1 text-[11.5px] text-stone-500 bg-stone-100 active:bg-stone-200 rounded-md border-none cursor-pointer touch-manipulation"
-          >编辑</button>
+          >{{ t('friends.edit') }}</button>
           <button
             @click.stop="handleDelete(s.friend)"
             class="px-2 py-1 text-[11.5px] text-rose-500 bg-rose-50 active:bg-rose-100 rounded-md border-none cursor-pointer touch-manipulation"
-          >删除</button>
+          >{{ t('friends.delete') }}</button>
         </div>
       </div>
     </div>

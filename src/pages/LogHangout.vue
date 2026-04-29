@@ -4,13 +4,15 @@ import { useRoute, useRouter } from 'vue-router'
 import { useFriends } from '../composables/useFriends'
 import { useCustomTypes } from '../composables/useCustomTypes'
 import { useCustomDurations } from '../composables/useCustomDurations'
-import { HANGOUT_TYPES, DURATION_OPTIONS } from '../types/index.js'
+import { useI18n } from '../composables/useI18n.js'
+import { HANGOUT_TYPES, DURATION_OPTIONS, displayLabel } from '../types/index.js'
 
 const router = useRouter()
 const route = useRoute()
 const { friends, addFriend, addHangout } = useFriends()
 const { customTypes, addCustomType, removeCustomType } = useCustomTypes()
 const { customDurations, addCustomDuration, removeCustomDuration } = useCustomDurations()
+const { t } = useI18n()
 
 const selectedFriendIds = ref([])
 const hangoutType = ref('meal')
@@ -19,14 +21,14 @@ const quality = ref(6)
 const date = ref(new Date().toISOString().slice(0, 10))
 const note = ref('')
 
-// "其他" stays in HANGOUT_TYPES for legacy data display, but we hide it from the picker —
-// users now create their own types via the "+ 新增" button.
+// "Other" stays in HANGOUT_TYPES for legacy data display, but we hide it from the picker —
+// users now create their own types via the "+ New" button.
 const visibleTypes = computed(() => [
-  ...HANGOUT_TYPES.filter((t) => t.value !== 'other'),
+  ...HANGOUT_TYPES.filter((tp) => tp.value !== 'other').map((tp) => ({ ...tp, label: displayLabel(tp, t) })),
   ...customTypes.value,
 ])
 const visibleDurations = computed(() => [
-  ...DURATION_OPTIONS,
+  ...DURATION_OPTIONS.map((d) => ({ ...d, label: displayLabel(d, t) })),
   ...customDurations.value,
 ])
 
@@ -87,7 +89,8 @@ function startLongPress(item, kind) {
   if (!item.value || !String(item.value).startsWith('c_')) return
   longPressTimer = setTimeout(() => {
     longPressTimer = null
-    if (confirm(`删除自定义${kind === 'type' ? '类型' : '时长'}「${item.label}」？`)) {
+    const kindLabel = kind === 'type' ? t('log.typeLabel') : t('log.durationLabel')
+    if (confirm(t('log.confirmDeleteCustom', { kind: kindLabel, label: item.label }))) {
       if (kind === 'type') {
         removeCustomType(item.value)
         if (hangoutType.value === item.value) hangoutType.value = 'meal'
@@ -130,19 +133,19 @@ function submit() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
           <path d="M15 18 L9 12 L15 6" />
         </svg>
-        返回
+        {{ t('log.back') }}
       </router-link>
       <div>
-        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400 text-right">Log</p>
-        <h1 class="text-[18px] font-semibold text-stone-900 tracking-tight">记录聚会</h1>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400 text-right">{{ t('log.tagline') }}</p>
+        <h1 class="text-[18px] font-semibold text-stone-900 tracking-tight">{{ t('log.title') }}</h1>
       </div>
     </div>
 
     <!-- Friend selector -->
     <section class="mb-7">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">和谁玩了</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.whoWith') }}</p>
       <div v-if="friends.length === 0" class="text-[13px] text-stone-400 mb-2">
-        还没有朋友，先添加一个吧
+        {{ t('log.noFriendsYet') }}
       </div>
       <div class="rounded-xl overflow-hidden max-h-56 overflow-y-auto" style="border: 1px solid #ece9e4">
         <label
@@ -172,12 +175,12 @@ function submit() {
         @click="showAddFriend = true"
         class="mt-2.5 text-[12.5px] text-stone-500 hover:text-stone-900 bg-transparent border-none cursor-pointer"
       >
-        + 添加新朋友
+        {{ t('log.addNewFriend') }}
       </button>
       <div v-else class="flex gap-2 mt-2.5">
         <input
           v-model="newFriendName"
-          placeholder="朋友名字"
+          :placeholder="t('log.friendNamePlaceholder')"
           class="flex-1 bg-white rounded-lg px-3.5 py-2 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
           style="border: 1px solid #ece9e4"
           @keyup.enter="handleAddFriend"
@@ -185,45 +188,45 @@ function submit() {
         <button
           @click="handleAddFriend"
           class="px-3.5 py-2 bg-stone-900 text-white text-[13px] rounded-lg border-none cursor-pointer"
-        >添加</button>
+        >{{ t('log.addBtn') }}</button>
         <button
           @click="showAddFriend = false; newFriendName = ''"
           class="px-3.5 py-2 bg-stone-100 text-stone-600 text-[13px] rounded-lg border-none cursor-pointer"
-        >取消</button>
+        >{{ t('log.cancel') }}</button>
       </div>
     </section>
 
     <!-- Type picker -->
     <section class="mb-7">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">类型</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.type') }}</p>
       <div class="flex flex-wrap gap-2">
         <button
-          v-for="t in visibleTypes"
-          :key="t.value"
-          @click="hangoutType = t.value"
-          @pointerdown="startLongPress(t, 'type')"
+          v-for="tp in visibleTypes"
+          :key="tp.value"
+          @click="hangoutType = tp.value"
+          @pointerdown="startLongPress(tp, 'type')"
           @pointerup="cancelLongPress"
           @pointerleave="cancelLongPress"
           @pointercancel="cancelLongPress"
           @contextmenu.prevent
           class="px-3.5 py-1.5 rounded-full text-[13px] cursor-pointer transition-colors select-none"
-          :class="hangoutType === t.value
+          :class="hangoutType === tp.value
             ? 'bg-stone-900 text-white'
             : 'bg-white text-stone-600'"
-          :style="hangoutType === t.value ? 'border: 1px solid #1c1917' : 'border: 1px solid #ece9e4'"
+          :style="hangoutType === tp.value ? 'border: 1px solid #1c1917' : 'border: 1px solid #ece9e4'"
         >
-          {{ t.icon }} {{ t.label }}
+          {{ tp.icon }} {{ tp.label }}
         </button>
         <button
           @click="showAddType = !showAddType; newTypeLabel = ''"
           class="px-3 py-1.5 rounded-full text-[13px] text-stone-500 bg-stone-50 cursor-pointer transition-colors"
           style="border: 1px dashed #d6d3d1"
-        >+ 新增</button>
+        >{{ t('log.addNew') }}</button>
       </div>
       <div v-if="showAddType" class="flex gap-2 mt-2.5">
         <input
           v-model="newTypeLabel"
-          placeholder="新类型（可加 emoji，如：🎲 桌游）"
+          :placeholder="t('log.newTypePlaceholder')"
           class="flex-1 bg-white rounded-lg px-3.5 py-2 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
           style="border: 1px solid #ece9e4"
           @keyup.enter="handleAddType"
@@ -231,14 +234,14 @@ function submit() {
         <button
           @click="handleAddType"
           class="px-3.5 py-2 bg-stone-900 text-white text-[13px] rounded-lg border-none cursor-pointer"
-        >添加</button>
+        >{{ t('log.addBtn') }}</button>
       </div>
-      <p v-if="customTypes.length" class="text-[11px] text-stone-400 mt-2">长按自定义类型可删除</p>
+      <p v-if="customTypes.length" class="text-[11px] text-stone-400 mt-2">{{ t('log.longPressTypeHint') }}</p>
     </section>
 
     <!-- Duration picker -->
     <section class="mb-7">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">时长</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.duration') }}</p>
       <div class="flex flex-wrap gap-2">
         <button
           v-for="d in visibleDurations"
@@ -261,12 +264,12 @@ function submit() {
           @click="showAddDuration = !showAddDuration; newDurationLabel = ''"
           class="px-3 py-1.5 rounded-full text-[13px] text-stone-500 bg-stone-50 cursor-pointer transition-colors"
           style="border: 1px dashed #d6d3d1"
-        >+ 新增</button>
+        >{{ t('log.addNew') }}</button>
       </div>
       <div v-if="showAddDuration" class="flex gap-2 mt-2.5">
         <input
           v-model="newDurationLabel"
-          placeholder="新时长（如：3小时、一周）"
+          :placeholder="t('log.newDurationPlaceholder')"
           class="flex-1 bg-white rounded-lg px-3.5 py-2 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
           style="border: 1px solid #ece9e4"
           @keyup.enter="handleAddDuration"
@@ -274,14 +277,14 @@ function submit() {
         <button
           @click="handleAddDuration"
           class="px-3.5 py-2 bg-stone-900 text-white text-[13px] rounded-lg border-none cursor-pointer"
-        >添加</button>
+        >{{ t('log.addBtn') }}</button>
       </div>
-      <p v-if="customDurations.length" class="text-[11px] text-stone-400 mt-2">长按自定义时长可删除</p>
+      <p v-if="customDurations.length" class="text-[11px] text-stone-400 mt-2">{{ t('log.longPressDurationHint') }}</p>
     </section>
 
     <!-- Quality rating (1-10) -->
     <section class="mb-7">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">感受 · {{ quality }}/10</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.quality') }} · {{ quality }}/10</p>
       <div class="flex flex-wrap gap-0.5">
         <button
           v-for="s in 10"
@@ -295,7 +298,7 @@ function submit() {
 
     <!-- Date picker -->
     <section class="mb-7">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">日期</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.date') }}</p>
       <input
         v-model="date"
         type="date"
@@ -306,10 +309,10 @@ function submit() {
 
     <!-- Note -->
     <section class="mb-9">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">备注</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('log.note') }}</p>
       <textarea
         v-model="note"
-        placeholder="记点什么..."
+        :placeholder="t('log.notePlaceholder')"
         rows="3"
         class="w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none resize-none"
         style="border: 1px solid #ece9e4"
@@ -323,7 +326,7 @@ function submit() {
       class="w-full py-3 rounded-xl text-[15px] font-medium border-none cursor-pointer transition-colors"
       :class="canSubmit ? 'bg-stone-900 text-white active:bg-stone-800' : 'bg-stone-100 text-stone-400 cursor-not-allowed'"
     >
-      保存
+      {{ t('log.submit') }}
     </button>
   </div>
 </template>

@@ -2,10 +2,16 @@
 import { ref, computed } from 'vue'
 import { useFriends } from '../composables/useFriends'
 import { useCustomTypes } from '../composables/useCustomTypes'
-import { HANGOUT_TYPES } from '../types/index.js'
+import { useCustomDurations } from '../composables/useCustomDurations'
+import { useI18n } from '../composables/useI18n.js'
+import { HANGOUT_TYPES, DURATION_OPTIONS, displayLabel } from '../types/index.js'
 
 const { friends, hangouts } = useFriends()
 const { customTypes } = useCustomTypes()
+const { customDurations } = useCustomDurations()
+const { t, locale } = useI18n()
+
+const EN_MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 const today = new Date()
 const todayKey = fmt(today)
@@ -23,11 +29,12 @@ function fmt(d) {
 const monthLabel = computed(() => {
   const y = viewMonth.value.getFullYear()
   const m = viewMonth.value.getMonth() + 1
-  return `${y} 年 ${m} 月`
+  const monthValue = locale.value === 'en' ? EN_MONTHS[m - 1] : m
+  return t('calendar.monthLabel', { year: y, month: monthValue })
 })
 
-// Monday-start week labels
-const weekdayLabels = ['一', '二', '三', '四', '五', '六', '日']
+// Monday-start week labels — translated via i18n.
+const weekdayLabels = computed(() => t('calendar.weekdays'))
 
 // Build the day grid for the current viewMonth: previous-month padding, current
 // month days, next-month padding so the grid is a clean N×7.
@@ -104,12 +111,19 @@ function friendNames(ids) {
   return ids
     .map((id) => friendMap.value[id]?.name)
     .filter(Boolean)
-    .join('、')
+    .join(t('calendar.nameJoiner'))
 }
 
+const durationMap = computed(() => {
+  const map = {}
+  for (const d of [...DURATION_OPTIONS, ...customDurations.value]) {
+    map[d.value] = displayLabel(d, t)
+  }
+  return map
+})
+
 function durationLabel(value) {
-  const map = { '30min': '30分钟', '1hr': '1小时', '2hr': '2小时', halfday: '半天', fullday: '一天', trip: '旅行' }
-  return map[value] || value
+  return durationMap.value[value] || value
 }
 
 // Bottom stats — same flavor as the old 统计 page
@@ -127,7 +141,7 @@ const mostCommonType = computed(() => {
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
   if (!top) return null
   const info = typeMap.value[top[0]]
-  return info ? `${info.icon} ${info.label}` : top[0]
+  return info ? `${info.icon} ${displayLabel(info, t)}` : top[0]
 })
 
 const mostFrequentFriend = computed(() => {
@@ -154,8 +168,8 @@ const thisMonthHangouts = computed(() => {
   <div class="px-5 pt-9 pb-2">
     <!-- Header -->
     <div class="mb-7">
-      <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">Calendar</p>
-      <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">日历</h1>
+      <p class="text-[11px] uppercase tracking-[0.22em] text-stone-400">{{ t('calendar.tagline') }}</p>
+      <h1 class="text-[22px] font-semibold text-stone-900 mt-1.5 tracking-tight">{{ t('calendar.title') }}</h1>
     </div>
 
     <!-- Month nav -->
@@ -163,7 +177,7 @@ const thisMonthHangouts = computed(() => {
       <button
         @click="changeMonth(-1)"
         class="w-9 h-9 flex items-center justify-center rounded-lg bg-stone-100 active:bg-stone-200 border-none cursor-pointer touch-manipulation"
-        aria-label="上个月"
+        :aria-label="t('calendar.prevMonth')"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-stone-600">
           <path d="M15 18 L9 12 L15 6" />
@@ -176,7 +190,7 @@ const thisMonthHangouts = computed(() => {
       <button
         @click="changeMonth(1)"
         class="w-9 h-9 flex items-center justify-center rounded-lg bg-stone-100 active:bg-stone-200 border-none cursor-pointer touch-manipulation"
-        aria-label="下个月"
+        :aria-label="t('calendar.nextMonth')"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="text-stone-600">
           <path d="M9 18 L15 12 L9 6" />
@@ -187,7 +201,7 @@ const thisMonthHangouts = computed(() => {
     <!-- Weekday header -->
     <div class="grid grid-cols-7 gap-1 mb-1">
       <div
-        v-for="w in weekdayLabels" :key="w"
+        v-for="(w, i) in weekdayLabels" :key="i"
         class="text-center text-[10px] uppercase tracking-[0.18em] text-stone-400 py-1"
       >{{ w }}</div>
     </div>
@@ -223,7 +237,7 @@ const thisMonthHangouts = computed(() => {
         {{ selectedDate }}
       </p>
       <div v-if="selectedHangouts.length === 0" class="text-center text-stone-400 py-6 text-[13px]">
-        这天没有聚会记录
+        {{ t('calendar.noHangoutsThisDay') }}
       </div>
       <div v-else class="rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
         <div
@@ -234,7 +248,7 @@ const thisMonthHangouts = computed(() => {
         >
           <div class="flex items-center justify-between mb-1">
             <span class="text-[14px] font-medium text-stone-800">
-              {{ typeMap[h.type]?.icon || '' }} {{ typeMap[h.type]?.label || h.type }}
+              {{ typeMap[h.type]?.icon || '' }} {{ typeMap[h.type] ? (typeMap[h.type].labelKey ? t(typeMap[h.type].labelKey) : typeMap[h.type].label) : h.type }}
             </span>
             <span class="text-[11.5px] text-amber-500 font-medium tabular-nums">★ {{ h.quality }}/10</span>
           </div>
@@ -249,26 +263,26 @@ const thisMonthHangouts = computed(() => {
 
     <!-- Stats summary -->
     <section v-if="hangouts.length > 0" class="mb-2">
-      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">总览</p>
+      <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('calendar.overview') }}</p>
       <div class="grid grid-cols-2 rounded-xl overflow-hidden" style="border: 1px solid #ece9e4">
         <div class="p-4">
-          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">总聚会次数</p>
+          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">{{ t('calendar.totalHangouts') }}</p>
           <p class="text-[26px] font-light text-stone-900 mt-1 tabular-nums tracking-tight">{{ totalHangouts }}</p>
         </div>
         <div class="p-4 border-l" style="border-color: #ece9e4">
-          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">本月聚会</p>
+          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">{{ t('calendar.monthHangouts') }}</p>
           <p class="text-[26px] font-light text-stone-900 mt-1 tabular-nums tracking-tight">{{ thisMonthHangouts }}</p>
         </div>
         <div class="p-4 border-t" style="border-color: #ece9e4">
-          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">平均感受</p>
+          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">{{ t('calendar.avgQuality') }}</p>
           <p class="text-[20px] font-light text-stone-900 mt-1 tabular-nums tracking-tight">{{ avgQuality }}<span v-if="avgQuality !== '-'" class="text-[12px] text-stone-400">/10</span></p>
         </div>
         <div class="p-4 border-t border-l" style="border-color: #ece9e4">
-          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">最常见类型</p>
+          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">{{ t('calendar.mostCommonType') }}</p>
           <p class="text-[15px] font-medium text-stone-800 mt-1.5">{{ mostCommonType || '-' }}</p>
         </div>
         <div class="p-4 border-t col-span-2" style="border-color: #ece9e4">
-          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">最常聚的朋友</p>
+          <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium">{{ t('calendar.mostFrequentFriend') }}</p>
           <p class="text-[15px] font-medium text-stone-800 mt-1.5">{{ mostFrequentFriend || '-' }}</p>
         </div>
       </div>

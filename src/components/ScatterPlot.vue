@@ -2,6 +2,9 @@
 import { ref, computed } from 'vue'
 import { useGapThreshold } from '../composables/useGapThreshold'
 import { useViewMode } from '../composables/useViewMode'
+import { useI18n } from '../composables/useI18n.js'
+
+const { t } = useI18n()
 
 const props = defineProps({
   scores: { type: Array, required: true },
@@ -85,9 +88,9 @@ function closePopup() {
 }
 
 function gapLabel(gap) {
-  if (gap > gapThreshold.value) return '很值得'
-  if (gap < -gapThreshold.value) return '不平衡'
-  return '平衡'
+  if (gap > gapThreshold.value) return t('scatter.worth')
+  if (gap < -gapThreshold.value) return t('scatter.unbalanced')
+  return t('scatter.balanced')
 }
 
 function gapToneClass(gap) {
@@ -111,8 +114,8 @@ function gapToneClass(gap) {
         :x="padding - 8" :y="y(v) + 3" text-anchor="end" font-size="9" fill="#a8a29e">{{ v }}</text>
 
       <!-- Axis titles -->
-      <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#78716c">频率 →</text>
-      <text :x="12" :y="size / 2" text-anchor="middle" font-size="10" fill="#78716c" transform="rotate(-90, 12, 150)">感受 →</text>
+      <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#78716c">{{ t('scatter.xAxis') }}</text>
+      <text :x="12" :y="size / 2" text-anchor="middle" font-size="10" fill="#78716c" transform="rotate(-90, 12, 150)">{{ t('scatter.yAxis') }}</text>
 
       <!-- Balanced band -->
       <polygon :points="bandPoints" fill="#a8a29e" fill-opacity="0.06" stroke="#d6d3d1" stroke-width="1" stroke-dasharray="3 3" />
@@ -152,33 +155,33 @@ function gapToneClass(gap) {
           stroke="white"
           stroke-width="1"
         />
-        <title>{{ s.friend.name }} (频率: {{ Math.round(s.quantity) }}, 感受: {{ Math.round(s.quality) }})</title>
+        <title>{{ s.friend.name }} ({{ t('scatter.tooltipFreq') }}: {{ Math.round(s.quantity) }}, {{ t('scatter.tooltipQual') }}: {{ Math.round(s.quality) }})</title>
       </g>
     </svg>
 
     <!-- View mode toggle + threshold tuner -->
     <div v-if="showTuner" class="mt-3 px-1 space-y-3">
       <div class="flex items-center justify-between text-[11px] text-stone-500">
-        <span>显示</span>
+        <span>{{ t('scatter.show') }}</span>
         <div class="flex gap-1">
           <button
             type="button"
             @click="mode = 'normalized'"
             class="px-2.5 py-0.5 rounded-full text-[11px] border-none cursor-pointer transition-colors touch-manipulation"
             :class="mode === 'normalized' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'"
-          >标准化</button>
+          >{{ t('scatter.normalized') }}</button>
           <button
             type="button"
             @click="mode = 'absolute'"
             class="px-2.5 py-0.5 rounded-full text-[11px] border-none cursor-pointer transition-colors touch-manipulation"
             :class="mode === 'absolute' ? 'bg-stone-900 text-white' : 'bg-stone-100 text-stone-500'"
-          >绝对值</button>
+          >{{ t('scatter.absolute') }}</button>
         </div>
       </div>
       <div>
         <div class="flex items-center justify-between text-[11px] text-stone-500 mb-1.5">
-          <span>平衡范围 ±{{ gapThreshold }}</span>
-          <span class="text-stone-400">越大越宽容</span>
+          <span>{{ t('scatter.balanceRange', { value: gapThreshold }) }}</span>
+          <span class="text-stone-400">{{ t('scatter.moreLenient') }}</span>
         </div>
         <input
           type="range"
@@ -218,7 +221,7 @@ function gapToneClass(gap) {
       </p>
 
       <div class="mb-1">
-        <span class="text-[11px] text-stone-500">差值: </span>
+        <span class="text-[11px] text-stone-500">{{ t('scatter.gap') }}: </span>
         <span class="text-[11px] font-semibold" :class="gapToneClass(popup.gap)">
           {{ popup.gap > 0 ? '+' : '' }}{{ Math.round(popup.gap) }}
         </span>
@@ -226,8 +229,8 @@ function gapToneClass(gap) {
       </div>
 
       <div class="text-[11px] text-stone-500 space-y-0.5">
-        <div>频率: {{ Math.round(popup.quantity) }}</div>
-        <div>感受: {{ Math.round(popup.quality) }}</div>
+        <div>{{ t('scatter.tooltipFreq') }}: {{ Math.round(popup.quantity) }}</div>
+        <div>{{ t('scatter.tooltipQual') }}: {{ Math.round(popup.quality) }}</div>
       </div>
     </div>
 

@@ -25,20 +25,26 @@
  */
 
 export const HANGOUT_TYPES = [
-  { value: 'meal', icon: '🍜', label: '吃饭' },
-  { value: 'activity', icon: '🏃', label: '活动' },
-  { value: 'call', icon: '📞', label: '通话' },
-  { value: 'trip', icon: '✈️', label: '旅行' },
-  { value: 'hangout', icon: '🎉', label: '聚会' },
-  { value: 'online', icon: '💬', label: '线上' },
-  { value: 'other', icon: '📦', label: '其他' },
+  { value: 'meal', icon: '🍜', labelKey: 'types.meal' },
+  { value: 'activity', icon: '🏃', labelKey: 'types.activity' },
+  { value: 'call', icon: '📞', labelKey: 'types.call' },
+  { value: 'trip', icon: '✈️', labelKey: 'types.trip' },
+  { value: 'hangout', icon: '🎉', labelKey: 'types.hangout' },
+  { value: 'online', icon: '💬', labelKey: 'types.online' },
+  { value: 'other', icon: '📦', labelKey: 'types.other' },
 ]
 
 export const DURATION_OPTIONS = [
-  { value: '30min', label: '30分钟' },
-  { value: '1hr', label: '1小时' },
-  { value: '2hr', label: '2小时' },
-  { value: 'halfday', label: '半天' },
-  { value: 'fullday', label: '一天' },
-  { value: 'trip', label: '旅行' },
+  { value: '30min', labelKey: 'durations.30min' },
+  { value: '1hr', labelKey: 'durations.1hr' },
+  { value: '2hr', labelKey: 'durations.2hr' },
+  { value: 'halfday', labelKey: 'durations.halfday' },
+  { value: 'fullday', labelKey: 'durations.fullday' },
+  { value: 'trip', labelKey: 'durations.trip' },
 ]
+
+// Resolve display label: built-ins use labelKey via i18n, custom items use label directly.
+export function displayLabel(item, t) {
+  if (!item) return ''
+  return item.labelKey ? t(item.labelKey) : (item.label || '')
+}

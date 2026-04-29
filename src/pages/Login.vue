@@ -2,10 +2,12 @@
 import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuth } from '../composables/useAuth.js';
+import { useI18n } from '../composables/useI18n.js';
 
 const route = useRoute();
 const router = useRouter();
 const { signup, login, loginWithProvider, loginWithMagicLink, handleAuthCallback, handleMagicCallback, isLoggedIn, user, logout, loading, error } = useAuth();
+const { t } = useI18n();
 
 const email = ref('');
 const password = ref('');
@@ -109,8 +111,8 @@ function skipLogin() {
   <div class="min-h-screen bg-stone-50 flex flex-col items-center justify-center px-6">
     <!-- Logo area -->
     <div class="text-center mb-10">
-      <h1 class="text-3xl font-semibold text-stone-900 tracking-tight">找谁玩</h1>
-      <p class="text-sm text-stone-500 mt-2">登录以同步你的数据到云端</p>
+      <h1 class="text-3xl font-semibold text-stone-900 tracking-tight">{{ t('home.title') }}</h1>
+      <p class="text-sm text-stone-500 mt-2">{{ t('login.tagline') }}</p>
     </div>
 
     <!-- Already logged in -->
@@ -126,8 +128,8 @@ function skipLogin() {
         </div>
       </div>
       <div class="flex gap-2">
-        <button @click="$router.push('/')" class="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 rounded-xl text-sm font-medium text-white transition-colors">返回首页</button>
-        <button @click="handleLogout" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 rounded-xl text-sm font-medium text-stone-600 transition-colors">退出</button>
+        <button @click="$router.push('/')" class="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 rounded-xl text-sm font-medium text-white transition-colors">{{ t('login.backHome') }}</button>
+        <button @click="handleLogout" class="px-4 py-2.5 bg-stone-100 hover:bg-stone-200 rounded-xl text-sm font-medium text-stone-600 transition-colors">{{ t('login.logout') }}</button>
       </div>
     </div>
 
@@ -140,13 +142,13 @@ function skipLogin() {
       <!-- Magic link sent -->
       <div v-if="emailSent" class="w-full max-w-[320px] p-6 bg-white border border-stone-200 rounded-2xl shadow-sm text-center">
         <div class="text-3xl mb-3">✉️</div>
-        <h2 class="text-lg font-medium text-stone-800 mb-2">检查你的邮箱</h2>
-        <p class="text-sm text-stone-500 mb-4">我们向 <span class="font-medium text-stone-700">{{ email }}</span> 发送了登录链接</p>
+        <h2 class="text-lg font-medium text-stone-800 mb-2">{{ t('login.checkEmail') }}</h2>
+        <p class="text-sm text-stone-500 mb-4">{{ t('login.sentLink', { email }) }}</p>
         <div v-if="magicLink" class="mt-4 p-3 bg-stone-50 rounded-lg text-xs text-stone-400 break-all">
-          预览链接: <a :href="magicLink" class="text-blue-500 underline">{{ magicLink }}</a>
+          {{ t('login.previewLink') }}: <a :href="magicLink" class="text-blue-500 underline">{{ magicLink }}</a>
         </div>
         <button @click="emailSent = false; email = ''" class="mt-4 text-sm text-stone-500 hover:text-stone-700 bg-transparent border-none cursor-pointer">
-          重新输入邮箱
+          {{ t('login.reenterEmail') }}
         </button>
       </div>
 
@@ -164,7 +166,7 @@ function skipLogin() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          使用 Google 登录
+          {{ t('login.googleLogin') }}
         </button>
 
         <button
@@ -175,13 +177,13 @@ function skipLogin() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
             <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.56 0-.27-.01-1-.02-1.96-3.2.7-3.87-1.54-3.87-1.54-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.75 2.69 1.25 3.34.95.1-.74.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.09-.12-.29-.51-1.46.11-3.04 0 0 .97-.31 3.18 1.18a11.1 11.1 0 0 1 5.78 0c2.21-1.49 3.18-1.18 3.18-1.18.62 1.58.23 2.75.12 3.04.73.8 1.18 1.83 1.18 3.09 0 4.42-2.69 5.39-5.25 5.68.41.36.78 1.06.78 2.13 0 1.54-.01 2.78-.01 3.16 0 .31.21.67.8.56C20.21 21.39 23.5 17.08 23.5 12 23.5 5.65 18.35.5 12 .5z"/>
           </svg>
-          使用 GitHub 登录
+          {{ t('login.githubLogin') }}
         </button>
 
         <!-- Divider -->
         <div class="flex items-center gap-3 py-1">
           <div class="flex-1 h-px bg-stone-200"></div>
-          <span class="text-xs text-stone-400 uppercase tracking-wider">或</span>
+          <span class="text-xs text-stone-400 uppercase tracking-wider">{{ t('login.or') }}</span>
           <div class="flex-1 h-px bg-stone-200"></div>
         </div>
 
@@ -193,17 +195,17 @@ function skipLogin() {
               @click="isSignup = false; authMode = 'password'"
               class="flex-1 py-2 text-sm font-medium transition-colors border-none cursor-pointer"
               :class="!isSignup && authMode === 'password' ? 'bg-amber-500 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'"
-            >登录</button>
+            >{{ t('login.login') }}</button>
             <button
               @click="isSignup = true; authMode = 'password'"
               class="flex-1 py-2 text-sm font-medium transition-colors border-none cursor-pointer"
               :class="isSignup ? 'bg-amber-500 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'"
-            >注册</button>
+            >{{ t('login.signup') }}</button>
             <button
               @click="isSignup = false; authMode = 'magic'"
               class="flex-1 py-2 text-sm font-medium transition-colors border-none cursor-pointer"
               :class="authMode === 'magic' ? 'bg-amber-500 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'"
-            >邮箱链接</button>
+            >{{ t('login.magic') }}</button>
           </div>
 
           <!-- Name field (signup only) -->
@@ -211,7 +213,7 @@ function skipLogin() {
             v-if="isSignup"
             v-model="name"
             type="text"
-            placeholder="昵称 (可选)"
+            :placeholder="t('login.namePlaceholder')"
             class="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-shadow"
           />
 
@@ -219,7 +221,7 @@ function skipLogin() {
           <input
             v-model="email"
             type="email"
-            placeholder="输入邮箱地址"
+            :placeholder="t('login.emailPlaceholder')"
             class="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-shadow"
             @keyup.enter="authMode === 'password' ? null : handleEmailSubmit()"
           />
@@ -229,7 +231,7 @@ function skipLogin() {
             v-if="authMode === 'password'"
             v-model="password"
             type="password"
-            :placeholder="isSignup ? '设置密码 (至少6位)' : '输入密码'"
+            :placeholder="isSignup ? t('login.setPassword') : t('login.enterPassword')"
             class="w-full px-4 py-3 bg-white border border-stone-200 rounded-xl text-sm text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent transition-shadow"
             @keyup.enter="handleEmailSubmit"
           />
@@ -240,10 +242,10 @@ function skipLogin() {
             :disabled="processing || !email || (authMode === 'password' && !password)"
             class="w-full px-4 py-3 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 rounded-xl text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span v-if="processing">处理中...</span>
-            <span v-else-if="authMode === 'magic'">发送登录链接</span>
-            <span v-else-if="isSignup">创建账户</span>
-            <span v-else>登录</span>
+            <span v-if="processing">{{ t('login.processing') }}</span>
+            <span v-else-if="authMode === 'magic'">{{ t('login.sendMagic') }}</span>
+            <span v-else-if="isSignup">{{ t('login.createAccount') }}</span>
+            <span v-else>{{ t('login.login') }}</span>
           </button>
         </div>
 
@@ -253,7 +255,7 @@ function skipLogin() {
             @click="skipLogin"
             class="text-sm text-stone-400 hover:text-stone-600 bg-transparent border-none cursor-pointer"
           >
-            暂不登录，继续使用本地数据
+            {{ t('login.skip') }}
           </button>
         </div>
       </div>
@@ -261,7 +263,7 @@ function skipLogin() {
 
     <!-- Footer note -->
     <p class="mt-8 text-xs text-stone-400 text-center max-w-[280px]">
-      登录后你的数据将同步到云端<br>可以在任何设备上访问
+      {{ t('login.footer') }}<br>{{ t('login.footer2') }}
     </p>
   </div>
 </template>
