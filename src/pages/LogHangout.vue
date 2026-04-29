@@ -163,7 +163,7 @@ function submit() {
       <input
         v-if="hangoutType === 'other'"
         v-model="customTypeLabel"
-        placeholder="自定义类型名（如：桌游、剧本杀）"
+        placeholder="自定义类型名（前面可加 emoji，如 🎲 桌游）"
         class="mt-2.5 w-full bg-white rounded-lg px-3.5 py-2.5 text-[14px] text-stone-800 placeholder:text-stone-400 outline-none"
         style="border: 1px solid #ece9e4"
       />
