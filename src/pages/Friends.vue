@@ -70,6 +70,7 @@ function handleAdd() {
     location: newLocation.value.trim(),
     howWeMet: newHowWeMet.value.trim(),
     importantEvents, values,
+    isSeed: false,
   })
   resetForm()
 }

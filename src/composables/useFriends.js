@@ -32,14 +32,17 @@ function migrate() {
   }
 
   if (stored < 3) {
+    // Treat untagged items as user data (safer default — we can't reliably tell
+    // after-the-fact what was seeded vs user-added). The seed module re-seeds
+    // on its own version bump and tags those items explicitly.
     const friendsList = load(FRIENDS_KEY)
     if (friendsList.length > 0) {
-      const tagged = friendsList.map((f) => (f.isSeed === undefined ? { ...f, isSeed: true } : f))
+      const tagged = friendsList.map((f) => (f.isSeed === undefined ? { ...f, isSeed: false } : f))
       localStorage.setItem(FRIENDS_KEY, JSON.stringify(tagged))
     }
     const hangoutsList = load(HANGOUTS_KEY)
     if (hangoutsList.length > 0) {
-      const tagged = hangoutsList.map((h) => (h.isSeed === undefined ? { ...h, isSeed: true } : h))
+      const tagged = hangoutsList.map((h) => (h.isSeed === undefined ? { ...h, isSeed: false } : h))
       localStorage.setItem(HANGOUTS_KEY, JSON.stringify(tagged))
     }
   }
