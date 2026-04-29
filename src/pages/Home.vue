@@ -25,25 +25,7 @@ const recommendation = computed(() => {
   const now = Date.now()
   const dayMs = 1000 * 60 * 60 * 24
 
-  // Priority 1: most negative gap, active in last 30 days
-  const negativeActive = scored
-    .filter(s => s.gap < -gapThreshold.value)
-    .filter(s => {
-      const fh = hangouts.value.filter(h => h.friendIds.includes(s.friend.id))
-      if (fh.length === 0) return false
-      const last = fh.map(h => new Date(h.date)).reduce((max, d) => d > max ? d : max, new Date(0))
-      return (now - last) / dayMs <= 30
-    })
-  if (negativeActive.length > 0) {
-    const pick = negativeActive[0]
-    return {
-      friend: pick.friend,
-      text: `你应该找 ${pick.friend.name} 聊聊 — 你付出了很多但感觉一般，可以认真聊一次`,
-      color: 'from-red-400 to-red-500',
-    }
-  }
-
-  // Priority 2: most positive gap, not seen in 14+ days
+  // Priority 1: most positive gap, not seen in 14+ days — "go find someone you love hanging out with"
   const positiveStale = [...scored]
     .reverse()
     .filter(s => s.gap > gapThreshold.value)
@@ -59,6 +41,35 @@ const recommendation = computed(() => {
       friend: pick.friend,
       text: `你应该找 ${pick.friend.name} 玩玩 — 这段友谊总是让你很开心，但好久没见了`,
       color: 'from-green-400 to-green-500',
+    }
+  }
+
+  // Priority 2: any positive-gap friend (even if seen recently), if no stale ones exist
+  const positiveAny = [...scored].sort((a, b) => b.gap - a.gap).filter(s => s.gap > gapThreshold.value)
+  if (positiveAny.length > 0) {
+    const pick = positiveAny[0]
+    return {
+      friend: pick.friend,
+      text: `你应该找 ${pick.friend.name} 玩玩 — 这段友谊很值得珍惜`,
+      color: 'from-green-400 to-green-500',
+    }
+  }
+
+  // Priority 3: most negative gap, active in last 30 days — "you keep showing up but it doesn't feel great"
+  const negativeActive = scored
+    .filter(s => s.gap < -gapThreshold.value)
+    .filter(s => {
+      const fh = hangouts.value.filter(h => h.friendIds.includes(s.friend.id))
+      if (fh.length === 0) return false
+      const last = fh.map(h => new Date(h.date)).reduce((max, d) => d > max ? d : max, new Date(0))
+      return (now - last) / dayMs <= 30
+    })
+  if (negativeActive.length > 0) {
+    const pick = negativeActive[0]
+    return {
+      friend: pick.friend,
+      text: `你应该找 ${pick.friend.name} 聊聊 — 你付出了很多但感觉一般，可以认真聊一次`,
+      color: 'from-red-400 to-red-500',
     }
   }
 
