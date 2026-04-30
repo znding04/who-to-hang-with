@@ -263,6 +263,71 @@ Error responses:
 
 ## How Scoring Works
 
-Each friend gets a **Relationship Score (0–100)** based on your logged interactions. Scores decay exponentially over ~60 days without contact. High-quality, in-person interactions (trips, activities) weigh more than quick chats. The app recommends who to see next by combining low scores with high historical affinity — it nudges you toward friends you actually enjoy spending time with.
+Every friend lands on a **Quality × Frequency** scatter plot, both axes scaled 0–100. The diagonal is "balanced" — points above it (positive **gap**) are friends you enjoy more than you see; points below are the inverse.
 
-See [SPEC.md](./SPEC.md) for the full scoring algorithm and app specification.
+```
+gap = quality − frequency
+gap >  threshold  →  "worth it" (hang with more)
+gap < −threshold  →  "not worth it" (hang with less)
+```
+
+### Quality (Y axis)
+
+A pure average of your hangout quality ratings (1–10), rescaled to 10–100:
+
+```
+rawQuality = (Σ quality) / count × 10
+```
+
+Activity type intentionally has no weight here — an 8/10 phone call is still 8/10. Type belongs in the *investment* side (frequency), not how the time felt.
+
+### Frequency (X axis) — two modes, toggle by clicking the axis label
+
+**Lifetime frequency** (default) — log-scaled cumulative investment with recency decay:
+
+```
+total   = Σ DURATION_MULT[hangout.duration]
+decay   = exp(−daysSinceLastHangout / 60)
+rawFreq = ln(1 + total) × 25 × (0.3 + 0.7 × decay)
+```
+
+`DURATION_MULT` is intentionally compressed (not real hours) so a full day with someone doesn't dwarf five regular meals:
+
+| duration | multiplier |
+| --- | --- |
+| 30min | 0.5 |
+| 1hr | 1 |
+| 2hr | 1.5 |
+| halfday | 2 |
+| fullday | 3 |
+| trip | 4 |
+
+The `0.3 + 0.7 × decay` factor means an old friendship never falls below 30% of its peak weight — there's a floor for shared history — but recent contact dominates.
+
+**Hours / month** — actual time spent per month since your first logged hangout:
+
+```
+totalHours      = Σ DURATION_HOURS[hangout.duration]
+months          = max(0.5, daysSinceFirstHangout / 30)
+hoursPerMonth   = totalHours / months
+rawFreq         = ln(1 + hoursPerMonth) × 25
+```
+
+`DURATION_HOURS` uses real wall-clock hours (`30min=0.5, 1hr=1, 2hr=2, halfday=4, fullday=8, trip=24`). The half-month floor on `months` stops a brand-new friend with one big hangout from skyrocketing to the top of the axis. Recency decay is dropped here — the rate already accounts for time.
+
+### Normalization
+
+Raw scores are mapped to the 0–100 axis in one of two ways (toggle: View · Normalized / Absolute):
+
+- **Normalized** (default) — z-score relative to the population, with the mean pinned at 50:
+  ```
+  score = clamp((raw − μ) / σ × 20 + 50, 0, 100)
+  ```
+  About 68% of friends land in [30, 70]. Stable as the dataset grows; useful for ranking *within your circle*.
+- **Absolute** — raw scores clamped to [0, 100]. Useful if you want to compare against an objective bar instead of your own population.
+
+### Recommendations
+
+The "who to hang out with next" suggestion ranks friends by `gap` (highest = most under-invested in relative to enjoyment), filters out anyone marked unavailable today, and surfaces the top match.
+
+See [SPEC.md](./SPEC.md) for the full app specification, edge-case rules, and the gap-threshold tuner.
