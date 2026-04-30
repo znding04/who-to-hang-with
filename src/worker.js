@@ -71,7 +71,15 @@ function success(data = {}) {
 // ============================================================
 
 async function getJwtSecret(env) {
-  return env.JWT_SECRET || 'dev-secret-change-in-production';
+  const secret = env.JWT_SECRET;
+  if (!secret) {
+    // For development only - throw in production
+    if (env.NODE_ENV === 'production' || env.APP_BASE_URL) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    return 'dev-secret-change-in-production';
+  }
+  return secret;
 }
 
 async function signJwt(payload, env) {
@@ -88,7 +96,10 @@ async function verifyJwt(token, env) {
     const secret = await getJwtSecret(env);
     const expectedSig = await hmacSha256(`${header}.${body}`, secret);
     if (signature !== expectedSig) return null;
-    return JSON.parse(atob(body));
+    const payload = JSON.parse(atob(body));
+    // Check expiration
+    if (payload.exp && payload.exp < Date.now()) return null;
+    return payload;
   } catch {
     return null;
   }
@@ -227,7 +238,7 @@ function getAppleAuthUrl(state, env) {
     response_type: 'code id_token',
     scope: 'name email',
     state,
-    response_mode: 'form_post',
+    response_mode: 'query',
   });
   return `https://appleid.apple.com/auth/authorize?${params}`;
 }
@@ -374,7 +385,7 @@ async function createMagicToken(env, email) {
   const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
 
   await env.DB
-    .prepare(`INSERT INTO auth_tokens (token, user_id, email, expires_at, created_at) VALUES (?, '', ?, ?, ?)`)
+    .prepare(`INSERT INTO auth_tokens (token, user_id, email, expires_at, created_at) VALUES (?, NULL, ?, ?, ?)`)
     .bind(token, email, expiresAt, Date.now())
     .run();
 
@@ -577,7 +588,8 @@ router.add('POST', '/api/auth/:provider', async (req, env, params) => {
     return json({ error: 'Unknown provider' }, 400);
   }
 
-  const state = crypto.randomUUID();
+  const statePayload = { nonce: crypto.randomUUID(), created: Date.now() };
+  const state = await signJwt(statePayload, env);
   let redirectUrl;
 
   if (provider === 'google') redirectUrl = getGoogleAuthUrl(state, env);
@@ -598,7 +610,30 @@ router.add('GET', '/api/auth/callback/:provider', async (req, env, params) => {
   if (error) {
     return new Response(null, {
       status: 302,
-      headers: { Location: `/${'?error='}${error}` },
+      headers: { Location: `/#/login?error=${error}` },
+    });
+  }
+
+  // Validate state parameter (CSRF protection)
+  if (!state) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/#/login?error=missing_state` },
+    });
+  }
+  const statePayload = await verifyJwt(state, env);
+  if (!statePayload || !statePayload.nonce) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/#/login?error=invalid_state` },
+    });
+  }
+  // State valid for 10 minutes
+  const STATE_MAX_AGE = 10 * 60 * 1000;
+  if (Date.now() - statePayload.created > STATE_MAX_AGE) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: `/#/login?error=state_expired` },
     });
   }
 
@@ -984,10 +1019,8 @@ router.add('POST', '/api/data/migrate', requireAuth(async (req, env, params, url
 // ============================================================
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, Cookie',
-  'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400',
 };
 

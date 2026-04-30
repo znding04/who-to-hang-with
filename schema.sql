@@ -54,12 +54,12 @@ CREATE TABLE IF NOT EXISTS hangout_friends (
 -- Auth tokens table: for magic link tokens
 CREATE TABLE IF NOT EXISTS auth_tokens (
   token TEXT PRIMARY KEY,
-  user_id TEXT NOT NULL,
+  user_id TEXT,
   email TEXT NOT NULL,
   expires_at INTEGER NOT NULL,
   used INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL,
-  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Indexes for performance
