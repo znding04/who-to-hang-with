@@ -215,6 +215,7 @@ export default {
     hangout: '聚会',
     online: '线上',
     other: '其他',
+    unknown: '未知',
     customKind: '类型',
   },
   durations: {

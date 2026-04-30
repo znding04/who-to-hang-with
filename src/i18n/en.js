@@ -215,6 +215,7 @@ export default {
     hangout: 'Hangout',
     online: 'Online',
     other: 'Other',
+    unknown: 'Unknown',
     customKind: 'type',
   },
   durations: {

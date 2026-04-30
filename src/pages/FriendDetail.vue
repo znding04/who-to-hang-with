@@ -49,7 +49,7 @@ const typeMap = computed(() =>
 
 function typeLabel(type) {
   const info = typeMap.value[type]
-  return info ? displayLabel(info, t) : type
+  return info ? displayLabel(info, t) : displayLabel(type, t)
 }
 
 function gapText(gap) {
@@ -203,7 +203,7 @@ const infoRows = computed(() => {
             <div class="flex items-center justify-between mb-1">
               <span class="text-[13.5px] font-medium text-stone-800">
                 <template v-for="(tp, ti) in getHangoutTypes(h)" :key="tp">
-                  <span v-if="ti > 0" class="text-stone-300"> · </span>{{ typeMap[tp]?.icon || '' }} {{ typeLabel(tp) }}
+                  <span v-if="ti > 0" class="text-stone-300"> · </span>{{ typeMap[tp]?.icon || '📦' }} {{ typeLabel(tp) }}
                 </template>
               </span>
               <span class="text-[11.5px] text-stone-400 tabular-nums">{{ h.date }}</span>

@@ -62,7 +62,7 @@ function bestActivityFor(friendId) {
     }
   }
   const info = typeMap.value[bestType]
-  return info ? `${info.icon} ${displayLabel(info, t)}` : null
+  return info ? `${info.icon} ${displayLabel(info, t)}` : `📦 ${displayLabel(bestType, t)}`
 }
 
 const recommendation = computed(() => {

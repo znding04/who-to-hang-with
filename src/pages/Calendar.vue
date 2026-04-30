@@ -155,7 +155,7 @@ const mostCommonType = computed(() => {
   const top = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
   if (!top) return null
   const info = typeMap.value[top[0]]
-  return info ? `${info.icon} ${displayLabel(info, t)}` : top[0]
+  return info ? `${info.icon} ${displayLabel(info, t)}` : `📦 ${displayLabel(top[0], t)}`
 })
 
 const mostFrequentFriend = computed(() => {
@@ -263,7 +263,7 @@ const thisMonthHangouts = computed(() => {
           <div class="flex items-center justify-between mb-1">
             <span class="text-[14px] font-medium text-stone-800">
               <template v-for="(tp, ti) in getHangoutTypes(h)" :key="tp">
-                <span v-if="ti > 0" class="text-stone-300"> · </span>{{ typeMap[tp]?.icon || '' }} {{ typeMap[tp] ? (typeMap[tp].labelKey ? t(typeMap[tp].labelKey) : typeMap[tp].label) : tp }}
+                <span v-if="ti > 0" class="text-stone-300"> · </span>{{ typeMap[tp]?.icon || '📦' }} {{ typeMap[tp] ? displayLabel(typeMap[tp], t) : displayLabel(tp, t) }}
               </template>
             </span>
             <span class="text-[11.5px] text-amber-500 font-medium tabular-nums">★ {{ h.quality }}/10</span>
