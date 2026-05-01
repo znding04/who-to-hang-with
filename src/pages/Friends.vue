@@ -286,8 +286,8 @@ const sortedFriends = computed(() =>
           </p>
         </div>
         <div class="flex items-center gap-2.5 ml-3">
-          <span class="text-[12px] font-medium tabular-nums" :class="gapTone(s.gap)">
-            {{ s.gap > 0 ? '+' : '' }}{{ Math.round(s.gap) }}
+          <span class="text-[12px] font-medium tabular-nums" :class="isExcluded(s.friend.id) || (s.quantity === 0 && s.quality === 0) ? 'text-stone-300' : gapTone(s.gap)">
+            {{ isExcluded(s.friend.id) || (s.quantity === 0 && s.quality === 0) ? 'nan' : (s.gap > 0 ? '+' : '') + Math.round(s.gap) }}
           </span>
           <button
             @click.stop="openEdit(s.friend)"

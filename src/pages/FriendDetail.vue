@@ -14,7 +14,7 @@ import ScatterPlot from '../components/ScatterPlot.vue'
 const route = useRoute()
 const router = useRouter()
 const { getFriendById, getHangoutsForFriend, deleteFriend, deleteHangout } = useFriends()
-const { scoredFriends } = useScoring()
+const { scoredFriends, plotScores } = useScoring()
 const { gapThreshold } = useGapThreshold()
 const { customTypes } = useCustomTypes()
 const { t } = useI18n()
@@ -235,7 +235,7 @@ const infoRows = computed(() => {
       <div v-if="scoredFriends.length > 0" class="mb-9">
         <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('friendDetail.scatterPosition') }}</p>
         <div class="rounded-xl p-3" style="border: 1px solid #ece9e4; background: #fbfaf7">
-          <ScatterPlot :scores="scoredFriends" :highlight-id="friendId" :show-tuner="false" />
+          <ScatterPlot :scores="plotScores" :highlight-id="friendId" :show-tuner="false" />
         </div>
       </div>
 

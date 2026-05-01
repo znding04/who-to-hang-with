@@ -10,7 +10,7 @@ import ScatterPlot from '../components/ScatterPlot.vue'
 import InsightsPanel from '../components/InsightsPanel.vue'
 
 const { friends, hangouts } = useFriends()
-const { scoredFriends } = useScoring()
+const { scoredFriends, plotScores } = useScoring()
 const { isUnavailable, markUnavailable, resetToday, count: unavailableCount } = useUnavailable()
 const { customTypes } = useCustomTypes()
 const { t } = useI18n()
@@ -170,7 +170,7 @@ const toneDot = {
     <div v-else>
       <p class="text-[10px] uppercase tracking-[0.22em] text-stone-400 font-medium mb-3">{{ t('home.scatterTitle') }}</p>
       <div class="rounded-lg p-3 border" style="border-color: #ece9e4; background: #fbfaf7">
-        <ScatterPlot :scores="scoredFriends" :highlight-id="recommendation?.friend.id || null" :dim-others="false" />
+        <ScatterPlot :scores="plotScores" :highlight-id="recommendation?.friend.id || null" :dim-others="false" />
       </div>
       <div class="flex justify-center gap-5 text-[11px] text-stone-500 mt-3">
         <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ t('home.legend.worth') }}</span>

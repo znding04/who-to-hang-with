@@ -132,11 +132,14 @@ export function useScoring() {
   const { scaleMode } = useScaleMode()
 
   const scoredFriends = computed(() => {
-    const includedFriends = friends.value.filter(f => !isExcluded(f.id))
-    const raw = computeRawScores(includedFriends, hangouts.value, freqMode.value, customDurations.value)
+    const raw = computeRawScores(friends.value, hangouts.value, freqMode.value, customDurations.value)
     const scored = mode.value === 'absolute' ? absoluteScores(raw) : normalizeScores(raw, scaleMode.value)
     return scored.sort((a, b) => a.gap - b.gap)
   })
 
-  return { scoredFriends }
+  const plotScores = computed(() =>
+    scoredFriends.value.filter(s => !isExcluded(s.friend.id))
+  )
+
+  return { scoredFriends, plotScores }
 }
