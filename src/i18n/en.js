@@ -200,6 +200,7 @@ export default {
     xAxis: 'Frequency →',
     xAxisLifetime: 'Lifetime frequency',
     xAxisPerMonth: 'Hours / month',
+    xAxisTotalHours: 'Total time (hrs)',
     yAxis: 'Quality →',
     hangMore: 'hang with more',
     hangLess: 'hang with less',

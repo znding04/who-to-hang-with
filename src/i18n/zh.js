@@ -199,6 +199,7 @@ export default {
     xAxis: '频率 →',
     xAxisLifetime: '累计频率',
     xAxisPerMonth: '小时 / 月',
+    xAxisTotalHours: '总时间（小时）',
     yAxis: '感受 →',
     hangMore: '多找',
     hangLess: '少找',

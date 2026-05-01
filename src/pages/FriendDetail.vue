@@ -82,7 +82,7 @@ function typeLabel(type) {
 const friendActivityScores = computed(() => {
   if (friendHangouts.value.length === 0) return []
   return computeFriendActivityPlotScores(
-    friendHangouts.value, typeMap.value, t, scaleMode.value, viewMode.value
+    friendHangouts.value, typeMap.value, t, scaleMode.value, viewMode.value, customDurations.value
   )
 })
 

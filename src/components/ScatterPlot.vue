@@ -26,9 +26,10 @@ const { mode } = useViewMode()
 const { freqMode } = useFrequencyMode()
 const { scaleMode, toggleScaleMode } = useScaleMode()
 
-const xAxisLabel = computed(() =>
-  freqMode.value === 'permonth' ? t('scatter.xAxisPerMonth') : t('scatter.xAxisLifetime')
-)
+const xAxisLabel = computed(() => {
+  if (props.activityMode) return t('scatter.xAxisTotalHours')
+  return freqMode.value === 'permonth' ? t('scatter.xAxisPerMonth') : t('scatter.xAxisLifetime')
+})
 
 function toggleFreqMode() {
   freqMode.value = freqMode.value === 'permonth' ? 'lifetime' : 'permonth'
@@ -80,6 +81,8 @@ function handleDotClick(s) {
     quantity: s.quantity,
     quality: s.quality,
     gap: s.gap,
+    count: s.count,
+    totalHours: s.totalHours,
     x: x(s.quantity),
     y: y(s.quality),
   }
@@ -135,8 +138,8 @@ function gapToneClass(gap) {
         :x="padding - 8" :y="y(v) + 3" text-anchor="end" font-size="9" fill="#a8a29e">{{ v }}</text>
 
       <!-- Axis titles -->
-      <g class="cursor-pointer select-none" @click="toggleFreqMode">
-        <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" fill="#0ea5e9" font-weight="500">{{ xAxisLabel }} ⇄ →</text>
+      <g :class="activityMode ? 'select-none' : 'cursor-pointer select-none'" @click="activityMode ? null : toggleFreqMode()">
+        <text :x="size / 2" :y="size - 4" text-anchor="middle" font-size="10" :fill="activityMode ? '#78716c' : '#0ea5e9'" font-weight="500">{{ xAxisLabel }}{{ activityMode ? ' →' : ' ⇄ →' }}</text>
       </g>
       <text :x="10" :y="size / 2" text-anchor="middle" font-size="10" fill="#78716c" :transform="`rotate(-90, 10, ${size / 2})`">{{ t('scatter.yAxis') }}</text>
 
@@ -182,7 +185,7 @@ function gapToneClass(gap) {
           stroke="white"
           stroke-width="1"
         />
-        <title>{{ activityMode ? s.label : s.friend.name }} ({{ t('scatter.tooltipFreq') }}: {{ Math.round(s.quantity) }}, {{ t('scatter.tooltipQual') }}: {{ Math.round(s.quality) }})</title>
+        <title>{{ activityMode ? s.label : s.friend.name }} ({{ activityMode ? `${s.count || '?'}x, ${s.totalHours || '?'} hrs` : `${t('scatter.tooltipFreq')}: ${Math.round(s.quantity)}` }}, {{ t('scatter.tooltipQual') }}: {{ Math.round(s.quality) }})</title>
       </g>
     </svg>
 
@@ -275,7 +278,8 @@ function gapToneClass(gap) {
       </div>
 
       <div class="text-[11px] text-stone-500 space-y-0.5">
-        <div>{{ t('scatter.tooltipFreq') }}: {{ Math.round(popup.quantity) }}</div>
+        <div v-if="activityMode && popup.totalHours != null">{{ popup.count }} hangouts, {{ popup.totalHours }} hrs</div>
+        <div v-else>{{ t('scatter.tooltipFreq') }}: {{ Math.round(popup.quantity) }}</div>
         <div>{{ t('scatter.tooltipQual') }}: {{ Math.round(popup.quality) }}</div>
       </div>
     </div>

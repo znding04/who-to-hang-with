@@ -1,10 +1,32 @@
 import { computed } from 'vue'
 import { useFriends } from './useFriends'
 import { useCustomTypes } from './useCustomTypes'
+import { useCustomDurations } from './useCustomDurations'
 import { useScaleMode } from './useScaleMode'
 import { useViewMode } from './useViewMode'
 import { useI18n } from './useI18n.js'
 import { HANGOUT_TYPES, displayLabel, getHangoutTypes } from '../types/index.js'
+
+// Real hours per built-in duration bucket
+const DURATION_HOURS = { '30min': 0.5, '1hr': 1, '2hr': 2, 'halfday': 4, 'fullday': 8, 'trip': 24 }
+
+/**
+ * Convert a duration value (string) to hours.
+ * Handles built-in durations and custom durations (c_xxx).
+ */
+function durationToHours(duration, customDurations) {
+  if (!duration) return 1
+  if (DURATION_HOURS[duration] !== undefined) return DURATION_HOURS[duration]
+  if (typeof duration === 'string' && duration.startsWith('c_')) {
+    const found = customDurations.find(d => d.value === duration)
+    if (found) {
+      if (found.hours) return found.hours
+      if (found.days) return found.days * 8
+    }
+    return 1
+  }
+  return 1
+}
 
 /**
  * Normalize activity scores using the same log + range approach as useScoring.
@@ -47,14 +69,16 @@ function absoluteActivityScores(rawScores) {
 
 /**
  * Compute raw activity scores from a list of hangouts.
- * Returns [{ id, label, rawFreq, rawQual }]
+ * Returns [{ id, label, rawFreq, rawQual, count, totalHours }]
  */
-function computeRawActivityScores(hangouts, typeMap, t) {
+function computeRawActivityScores(hangouts, typeMap, t, customDurations = []) {
   const stats = {}
   for (const h of hangouts) {
+    const hours = durationToHours(h.duration, customDurations)
     for (const tp of getHangoutTypes(h)) {
-      if (!stats[tp]) stats[tp] = { count: 0, totalQuality: 0 }
+      if (!stats[tp]) stats[tp] = { count: 0, totalHours: 0, totalQuality: 0 }
       stats[tp].count++
+      stats[tp].totalHours += hours
       stats[tp].totalQuality += h.quality
     }
   }
@@ -64,8 +88,10 @@ function computeRawActivityScores(hangouts, typeMap, t) {
     return {
       id: type,
       label,
-      rawFreq: s.count,
+      rawFreq: s.totalHours,
       rawQual: (s.totalQuality / s.count) * 10, // same 0-100 scale as friend quality
+      count: s.count,
+      totalHours: s.totalHours,
     }
   })
 }
@@ -73,6 +99,7 @@ function computeRawActivityScores(hangouts, typeMap, t) {
 export function useActivityScoring() {
   const { hangouts } = useFriends()
   const { customTypes } = useCustomTypes()
+  const { customDurations } = useCustomDurations()
   const { scaleMode } = useScaleMode()
   const { mode } = useViewMode()
   const { t } = useI18n()
@@ -83,7 +110,7 @@ export function useActivityScoring() {
 
   /** Global activity scores (all friends, all hangouts) */
   const activityPlotScores = computed(() => {
-    const raw = computeRawActivityScores(hangouts.value, typeMap.value, t)
+    const raw = computeRawActivityScores(hangouts.value, typeMap.value, t, customDurations.value)
     return mode.value === 'absolute'
       ? absoluteActivityScores(raw)
       : normalizeActivityScores(raw, scaleMode.value)
@@ -96,8 +123,8 @@ export function useActivityScoring() {
  * Compute activity scores for a specific set of hangouts (e.g. for one friend).
  * Used by FriendDetail — not a composable, just a helper.
  */
-export function computeFriendActivityPlotScores(hangouts, typeMap, t, scaleMode, viewMode) {
-  const raw = computeRawActivityScores(hangouts, typeMap, t)
+export function computeFriendActivityPlotScores(hangouts, typeMap, t, scaleMode, viewMode, customDurations = []) {
+  const raw = computeRawActivityScores(hangouts, typeMap, t, customDurations)
   return viewMode === 'absolute'
     ? absoluteActivityScores(raw)
     : normalizeActivityScores(raw, scaleMode)
