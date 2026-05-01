@@ -125,7 +125,7 @@ export default {
     newTypePlaceholder: '新类型（可加 emoji，如：🎲 桌游）',
     longPressTypeHint: '长按自定义类型可删除',
     duration: '时长',
-    newDurationPlaceholder: '新时长（如：3小时、一周）',
+    newDurationPlaceholder: '如：1.5小时、90分钟、2天',
     longPressDurationHint: '长按自定义时长可删除',
     quality: '感受',
     date: '日期',

@@ -125,7 +125,7 @@ export default {
     newTypePlaceholder: 'New type (emoji ok, e.g. 🎲 board games)',
     longPressTypeHint: 'Long-press a custom type to delete',
     duration: 'Duration',
-    newDurationPlaceholder: 'New duration (e.g. 3 hours, a week)',
+    newDurationPlaceholder: 'e.g. 1.5 hr, 90 min, 2 days',
     longPressDurationHint: 'Long-press a custom duration to delete',
     quality: 'Quality',
     date: 'Date',

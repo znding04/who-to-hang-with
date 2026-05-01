@@ -2,6 +2,7 @@ import { computed } from 'vue'
 import { useFriends } from './useFriends'
 import { useViewMode } from './useViewMode'
 import { useFrequencyMode } from './useFrequencyMode'
+import { useCustomDurations } from './useCustomDurations'
 
 // Duration multiplier for lifetime quantity scoring (compressed, not real hours)
 const DURATION_MULT = { '30min': 0.5, '1hr': 1, '2hr': 1.5, 'halfday': 2, 'fullday': 3, 'trip': 4 }
@@ -12,20 +13,36 @@ const DURATION_HOURS = { '30min': 0.5, '1hr': 1, '2hr': 2, 'halfday': 4, 'fullda
 const MS_PER_DAY = 1000 * 60 * 60 * 24
 const DAYS_PER_MONTH = 30
 
-function computeRawLifetimeScore(friendId, hangouts) {
+function computeRawLifetimeScore(friendId, hangouts, customDurations) {
   const friendHangouts = hangouts.filter(h => h.friendIds.includes(friendId))
   if (friendHangouts.length === 0) return 0
-  const total = friendHangouts.reduce((sum, h) => sum + (DURATION_MULT[h.duration] || 1), 0)
+  const total = friendHangouts.reduce((sum, h) => {
+    if (DURATION_MULT[h.duration] !== undefined) return sum + DURATION_MULT[h.duration]
+    const custom = customDurations.find(d => d.value === h.duration)
+    if (custom) {
+      if (custom.days > 0) return sum + Math.log2(1 + custom.days * 8) * 0.5
+      if (custom.hours > 0) return sum + Math.log2(1 + custom.hours) * 0.5
+    }
+    return sum + 1
+  }, 0)
   const lastDate = friendHangouts.map(h => new Date(h.date)).reduce((max, d) => d > max ? d : max, new Date(0))
   const daysSince = (Date.now() - lastDate) / MS_PER_DAY
   const decay = Math.exp(-daysSince / 60)
   return Math.log(1 + total) * 25 * (0.3 + 0.7 * decay)
 }
 
-function computeRawPerMonthScore(friendId, hangouts) {
+function computeRawPerMonthScore(friendId, hangouts, customDurations) {
   const friendHangouts = hangouts.filter(h => h.friendIds.includes(friendId))
   if (friendHangouts.length === 0) return 0
-  const totalHours = friendHangouts.reduce((sum, h) => sum + (DURATION_HOURS[h.duration] || 1), 0)
+  const totalHours = friendHangouts.reduce((sum, h) => {
+    if (DURATION_HOURS[h.duration] !== undefined) return sum + DURATION_HOURS[h.duration]
+    const custom = customDurations.find(d => d.value === h.duration)
+    if (custom) {
+      if (custom.days > 0) return sum + custom.days * 24
+      if (custom.hours > 0) return sum + custom.hours
+    }
+    return sum + 1
+  }, 0)
   const firstDate = friendHangouts.map(h => new Date(h.date)).reduce((min, d) => d < min ? d : min, new Date())
   const daysSinceFirst = Math.max(0, (Date.now() - firstDate) / MS_PER_DAY)
   // Floor at half a month so a brand-new friend with one hangout doesn't dominate the axis.
@@ -34,10 +51,10 @@ function computeRawPerMonthScore(friendId, hangouts) {
   return Math.log(1 + hoursPerMonth) * 25
 }
 
-function computeRawQuantityScore(friendId, hangouts, freqMode) {
+function computeRawQuantityScore(friendId, hangouts, freqMode, customDurations) {
   return freqMode === 'permonth'
-    ? computeRawPerMonthScore(friendId, hangouts)
-    : computeRawLifetimeScore(friendId, hangouts)
+    ? computeRawPerMonthScore(friendId, hangouts, customDurations)
+    : computeRawLifetimeScore(friendId, hangouts, customDurations)
 }
 
 function computeRawQualityScore(friendId, hangouts) {
@@ -50,10 +67,10 @@ function computeRawQualityScore(friendId, hangouts) {
   return avgQuality * 10
 }
 
-function computeRawScores(friends, hangouts, freqMode) {
+function computeRawScores(friends, hangouts, freqMode, customDurations) {
   return friends.map(friend => ({
     friend,
-    rawQ: computeRawQuantityScore(friend.id, hangouts, freqMode),
+    rawQ: computeRawQuantityScore(friend.id, hangouts, freqMode, customDurations),
     rawY: computeRawQualityScore(friend.id, hangouts),
   }))
 }
@@ -98,9 +115,10 @@ export function useScoring() {
   const { friends, hangouts } = useFriends()
   const { mode } = useViewMode()
   const { freqMode } = useFrequencyMode()
+  const { customDurations } = useCustomDurations()
 
   const scoredFriends = computed(() => {
-    const raw = computeRawScores(friends.value, hangouts.value, freqMode.value)
+    const raw = computeRawScores(friends.value, hangouts.value, freqMode.value, customDurations.value)
     const scored = mode.value === 'absolute' ? absoluteScores(raw) : normalizeScores(raw)
     return scored.sort((a, b) => a.gap - b.gap)
   })

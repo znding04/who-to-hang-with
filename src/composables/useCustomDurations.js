@@ -4,11 +4,43 @@ import { useAuth } from './useAuth.js'
 
 const KEY = 'wtpw_custom_durations'
 
+/** Parse hours and days from a custom duration label string. */
+function parseDurationLabel(label) {
+  let hours = 0
+  let days = 0
+  const lo = (label || '').toLowerCase()
+
+  if (lo.includes('half day') || lo.includes('half-day')) {
+    hours = 4
+  } else if (/day|d\b/.test(lo)) {
+    const m = label.match(/(\d+\.?\d*)\s*(?:day|d\b)/i)
+    if (m) days = parseFloat(m[1])
+  } else if (/hr|hour|min/.test(lo)) {
+    const m = label.match(/(\d+\.?\d*)\s*(hr|hour|min|minute)/i)
+    if (m) {
+      hours = parseFloat(m[1])
+      if (m[2].toLowerCase().startsWith('min')) hours = hours / 60
+    }
+  } else {
+    const m = label.match(/(\d+\.?\d*)/)
+    if (m) hours = parseFloat(m[1])
+  }
+  return { hours, days }
+}
+
+/** Ensure a duration object has hours/days fields (migrate if needed). */
+function ensureHoursDays(d) {
+  if (d.hours !== undefined || d.days !== undefined) return d
+  const { hours, days } = parseDurationLabel(d.label)
+  return { ...d, hours, days }
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(KEY)
     const parsed = raw ? JSON.parse(raw) : []
-    return Array.isArray(parsed) ? parsed : []
+    const arr = Array.isArray(parsed) ? parsed : []
+    return arr.map(ensureHoursDays)
   } catch {
     return []
   }
@@ -37,7 +69,7 @@ async function syncFromCloud() {
       }
     }
     const merged = await api.getCustomDurations()
-    customDurations.value = merged.customDurations || []
+    customDurations.value = (merged.customDurations || []).map(ensureHoursDays)
     _cloudSynced.value = true
   } catch (err) {
     console.error('Custom durations sync failed:', err)
@@ -66,7 +98,8 @@ export function useCustomDurations() {
     const existing = customDurations.value.find((d) => d.label === label)
     if (existing) return existing
     const value = `c_${crypto.randomUUID().slice(0, 8)}`
-    const created = { value, label }
+    const { hours, days } = parseDurationLabel(label)
+    const created = { value, label, hours, days }
     customDurations.value.push(created)
 
     if (_isLoggedInRef.value) {
