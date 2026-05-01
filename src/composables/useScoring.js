@@ -98,8 +98,10 @@ function normalizeScores(rawScores) {
   return rawScores.map(({ friend, rawQ, rawY }) => {
     const lq = rawQ > 0 ? Math.log(1 + rawQ) : 0
     const ly = rawY > 0 ? Math.log(1 + rawY) : 0
-    const quantity = lq > 0 ? (rangeQ > 0 ? Math.round(((lq - minQ) / rangeQ) * 100) : 50) : 0
-    const quality = ly > 0 ? (rangeY > 0 ? Math.round(((ly - minY) / rangeY) * 100) : 50) : 0
+    // Use Math.max(1, …) so friends with data never normalize to 0 —
+    // 0 is reserved for friends with NO hangouts at all.
+    const quantity = lq > 0 ? (rangeQ > 0 ? Math.max(1, Math.round(((lq - minQ) / rangeQ) * 100)) : 50) : 0
+    const quality = ly > 0 ? (rangeY > 0 ? Math.max(1, Math.round(((ly - minY) / rangeY) * 100)) : 50) : 0
     return { friend, quantity, quality, gap: quality - quantity }
   })
 }
